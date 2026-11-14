@@ -50,7 +50,7 @@ const Fx=(()=>{
   }
 
   /* garis indikator tab yang meluncur dari tab lama ke tab baru */
-  function nav(){
+  function nav(){return;
     const nv=document.getElementById('nav');if(!nv)return;
     const a=nv.querySelector('a.active');let i=nv.querySelector('.ind');
     if(!i){i=document.createElement('i');i.className='ind';nv.appendChild(i)}

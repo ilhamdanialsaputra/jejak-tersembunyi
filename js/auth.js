@@ -29,7 +29,7 @@ const Sess=(()=>{
     async out(){await Store.auth.logout();user=null;sessionStorage.removeItem(G);setState(ld(KEY,{}));closeOv();api.go('masuk')},
     guestGo(){sessionStorage.setItem(G,'1');api.go('beranda')},
     paint(){const b=document.getElementById('bAcc');if(!b)return;
-      document.body.classList.toggle('auth',(location.hash||'').slice(1)==='masuk');
+      document.body.classList.toggle('is-auth',(location.hash||'').slice(1)==='masuk');
       b.classList.toggle('on',!!user);b.setAttribute('aria-label',user?'Akun: '+user.nama:'Masuk');
       b.innerHTML=user?`<span>${esc(ini(user.nama))}</span>`:'<svg viewBox="0 0 24 24"><circle cx="12" cy="8.5" r="3.6"/><path d="M5 20c.8-3.6 3.7-5.4 7-5.4s6.2 1.8 7 5.4"/></svg>'},
     async panel(){
@@ -48,7 +48,7 @@ const Sess=(()=>{
 /* ---------------- Masuk / Daftar ---------------- */
 function viewMasuk(){
   let role='murid',mode='masuk';
-  app.innerHTML=`<div class="auth"><aside class="ab"><span class="logo" lang="zh">史</span>
+  app.innerHTML=`<div class="authbox"><aside class="ab"><span class="logo" lang="zh">史</span>
     <h1>Jejak yang Tersembunyi</h1><p class="sub">E-modul suplemen Sejarah kelas XI</p>
     <ul><li>Tujuh unit tentang peran etnis Tionghoa dalam sejarah Indonesia</li><li>Jawaban dan progres belajar tersimpan di akunmu</li><li>Guru memantau perkembangan kelas dari satu dasbor</li></ul>
     <small>${Store.mode==='lokal'?'Mode prototipe: data tersimpan di peramban ini dan belum tersinkron antarperangkat.':'Tersinkron ke server.'}</small></aside>
