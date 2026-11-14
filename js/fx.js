@@ -7,7 +7,7 @@
    Otomatis dimatikan bila perangkat meminta "kurangi gerakan".
    ============================================================ */
 /* lompat ke atas seketika (mengabaikan scroll-behavior:smooth di CSS) */
-function jumpTop(){const r=document.documentElement,o=r.style.scrollBehavior;
+function jumpTop(){const r=document.documentElement;if(!(window.pageYOffset||r.scrollTop||document.body.scrollTop))return;const o=r.style.scrollBehavior;
   r.style.scrollBehavior='auto';window.scrollTo(0,0);r.scrollTop=0;document.body.scrollTop=0;
   requestAnimationFrame(()=>{r.style.scrollBehavior=o});}
 try{history.scrollRestoration='manual'}catch(e){}
@@ -16,6 +16,8 @@ const Fx=(()=>{
   const EASE='cubic-bezier(.76,0,.18,1)',OUT='cubic-bezier(.2,.7,.2,1)';
   let el=null,busy=false,phase='',next=null,pi=null;
   const wait=ms=>new Promise(r=>setTimeout(r,ms));
+  /* tunggu n frame (dengan cadangan timer supaya tidak menggantung di tab latar) */
+  const frames=n=>Promise.race([new Promise(r=>{const t=()=>--n>0?requestAnimationFrame(t):r();requestAnimationFrame(t)}),wait(70)]);
   const build=()=>{el=document.createElement('div');el.className='curtain';el.setAttribute('aria-hidden','true');
     el.innerHTML='<i class="c1"></i><i class="c2"></i><i class="c3"><div class="lab"><span class="z" lang="zh">史</span><b></b><small></small></div></i>';
     document.body.appendChild(el)};
@@ -26,13 +28,16 @@ const Fx=(()=>{
     if(h.startsWith('unit-')){const u=UNITS.find(x=>x.id===+h.slice(5));return u?['Unit '+u.id,u.periode]:['','']}
     return FIX[h]||['','']};
   const run=(n,kf,o)=>n.animate(kf,Object.assign({fill:'both',easing:EASE},o)).finished;
+  /* siapkan tirai dan huruf 史 saat browser menganggur, bukan saat transisi pertama */
+  const warm=()=>{if(!el&&!reduce())build();try{document.fonts&&document.fonts.load('600 1em "Noto Serif SC"','史')}catch(e){}};
+  (window.requestIdleCallback?requestIdleCallback(warm,{timeout:2500}):setTimeout(warm,1200));
 
   async function go(a,b,fn){
     if(reduce()||a===b){fn();return}
     next=fn;
     if(busy){if(phase==='reveal'){const f=next;next=null;f()}return}
     busy=true;phase='cover';
-    const wd=setTimeout(()=>{if(next){const q=next;next=null;q()}if(el){el.getAnimations({subtree:true}).forEach(x=>x.cancel());el.classList.remove('on')}document.documentElement.classList.remove('fx');busy=false;phase=''},2600);
+    const app=document.getElementById('app');
     try{
       if(!el)build();
       const d=order(b)>=order(a)?1:-1,P=[...el.children],lab=el.querySelector('.lab'),[t,s]=label(b);
@@ -40,18 +45,21 @@ const Fx=(()=>{
       el.classList.add('on');
       const M=matchMedia('(max-width:899px)').matches,T=M?{c:320,s:55,h:90,r:380,x:18}:{c:380,s:70,h:170,r:460,x:40};
       const from=d>0?'translate3d(-101%,0,0)':'translate3d(101%,0,0)',full='translate3d(0,0,0)',to=d>0?'translate3d(101%,0,0)':'translate3d(-101%,0,0)';
+      app.style.willChange='opacity,transform';
       document.documentElement.classList.add('fx');
       await Promise.all(P.map((n,i)=>run(n,[{transform:from},{transform:full}],{duration:T.c,delay:i*T.s})));
+      const t0=performance.now();
       lab.animate([{opacity:0},{opacity:1}],{duration:220,fill:'both',easing:OUT});
+      await frames(2);
+      const y=performance.now()-t0;
       jumpTop();const f=next;next=null;if(f)f();jumpTop();
-      await wait(T.h);await new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r)));
+      await wait(Math.max(0,T.h-y));
       phase='reveal';
       lab.animate([{opacity:1},{opacity:0}],{duration:160,fill:'both'});
-      const app=document.getElementById('app');
       app.animate([{opacity:0,transform:`translateX(${d*T.x}px)`},{opacity:1,transform:'none'}],{duration:M?520:760,delay:M?90:140,easing:OUT,fill:'backwards'});
       await Promise.all([...P].reverse().map((n,i)=>run(n,[{transform:full},{transform:to}],{duration:T.r,delay:i*T.s})));
     }finally{
-      clearTimeout(wd);
+      app.style.willChange='';
       if(el){el.getAnimations({subtree:true}).forEach(x=>x.cancel());el.classList.remove('on')}
       document.documentElement.classList.remove('fx');
       if(next){const f=next;next=null;f()}
@@ -70,10 +78,5 @@ const Fx=(()=>{
     i.style.opacity=1;i.style.transition='';i.style.transform=`translateX(${x}px)`;i.style.width=w+'px';pi={x,w};
   }
   let rz;addEventListener('resize',()=>{clearTimeout(rz);rz=setTimeout(()=>{pi=null;nav()},150)});
-  const pre=()=>{if(!el&&!reduce())build()};window.requestIdleCallback?requestIdleCallback(pre,{timeout:600}):setTimeout(pre,400);
   return{go,nav};
 })();
-
-/* theme-color peramban mengikuti tema (AMOLED hitam saat gelap) */
-function setTC(){const f=document.documentElement.dataset.theme;
-  document.querySelectorAll('meta[name=theme-color]').forEach(m=>{m.content=f?(f==='dark'?'#000000':'#FFFFFF'):(/dark/.test(m.media)?'#000000':'#FFFFFF')})}
