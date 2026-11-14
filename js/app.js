@@ -34,7 +34,9 @@ const ini=n=>n.replace(/\(.*?\)/g,'').trim().split(/\s+/).map(w=>w[0]).join('').
 const potret=n=>`<div class="potret"><img src="assets/tokoh/${slug(n)}.jpg" alt="${esc(n)}" data-k="${esc(ini(n))}"></div>`;
 
 /* ---------- pengaturan tampilan ---------- */
-function applyPrefs(){const r=document.documentElement;prefs.tema==='auto'?r.removeAttribute('data-theme'):r.dataset.theme=prefs.tema;r.style.fontSize=prefs.ukuran+'%';document.body.classList.toggle('proyektor',!!prefs.proyektor);sv(PK,prefs)}
+function applyTheme(){const dk=prefs.tema==='dark'||(prefs.tema==='auto'&&matchMedia('(prefers-color-scheme:dark)').matches),m=document.querySelector('meta[name=theme-color]');if(m)m.content=dk?'#000000':'#9A2B21'}
+try{matchMedia('(prefers-color-scheme:dark)').addEventListener('change',applyTheme)}catch(e){}
+function applyPrefs(){applyTheme();const r=document.documentElement;prefs.tema==='auto'?r.removeAttribute('data-theme'):r.dataset.theme=prefs.tema;r.style.fontSize=prefs.ukuran+'%';document.body.classList.toggle('proyektor',!!prefs.proyektor);sv(PK,prefs)}
 function setPop(){const p=$('#setPop');const seg=(k,o)=>`<div class="seg">${o.map(([v,l])=>`<button data-k="${k}" data-v="${v}" aria-pressed="${String(prefs[k])===String(v)}">${l}</button>`).join('')}</div>`;
   p.innerHTML=`<h4>Tema</h4>${seg('tema',[['auto','Otomatis'],['light','Terang'],['dark','Gelap']])}<h4>Ukuran teks</h4>${seg('ukuran',[[90,'Kecil'],[100,'Normal'],[115,'Besar']])}<h4>Mode proyektor (teks besar)</h4>${seg('proyektor',[[false,'Mati'],[true,'Hidup']])}<button class="ghost" id="bPrint" style="width:100%">Cetak halaman ini</button>`;
   $$('button[data-k]',p).forEach(b=>b.onclick=()=>{let v=b.dataset.v;prefs[b.dataset.k]=v==='true'?true:v==='false'?false:(isNaN(v)?v:+v);applyPrefs();setPop()});$('#bPrint').onclick=()=>print()}
@@ -54,8 +56,21 @@ $('#bSearch').onclick=openSearch;
 document.addEventListener('keydown',e=>{if(e.key==='Escape')closeOv();if(e.key==='/'&&!/INPUT|TEXTAREA/.test(document.activeElement.tagName)){e.preventDefault();openSearch()}});
 
 /* ---------- navigasi ---------- */
-function renderNav(a){const nv0=$('#nav'),sl0=nv0.scrollLeft;nv0.innerHTML=[['beranda','Beranda'],...UNITS.map(u=>['unit-'+u.id,String(u.id),u]),['glosarium','Glosarium'],['tokoh','Tokoh'],...(Sess.role()!=='murid'?[['panduan-guru','Panduan guru']]:[]),...(Sess.role()==='guru'?[['dasbor','Dasbor']]:[])].map(([h,l,u])=>`<a href="#${h}" class="${a===h?'active':''} ${u&&state.done[u.id]?'done':''}" ${u?`title="${esc(u.judul)}" aria-label="Unit ${u.id}"`:''} ${a===h?'aria-current="page"':''}>${u?'Unit '+l:l}</a>`).join('');nv0.scrollLeft=sl0;const act=$('#nav a.active');if(act)ctr(act);fades();Fx.nav();Sess.paint()}
+const MI={home:'<path d="M4 11l8-7 8 7v9a1 1 0 0 1-1 1h-4v-6H9v6H5a1 1 0 0 1-1-1z"/>',unit:'<path d="M5 4h11a3 3 0 0 1 3 3v13H8a3 3 0 0 1-3-3z M5 17a3 3 0 0 1 3-3h11"/>',tokoh:'<circle cx="9" cy="8" r="3.2"/><path d="M3 20c.6-3.5 3-5.2 6-5.2s5.4 1.7 6 5.2 M16 5.2a3 3 0 0 1 0 5.6 M18 14.8c1.8.6 3 2.2 3.3 4.6"/>',glos:'<path d="M5 4h12a2 2 0 0 1 2 2v14H7a2 2 0 0 1-2-2z M9 8h6 M9 12h6"/>',more:'<circle cx="6" cy="12" r="1.3" fill="currentColor"/><circle cx="12" cy="12" r="1.3" fill="currentColor"/><circle cx="18" cy="12" r="1.3" fill="currentColor"/>'};
+function renderMnav(a){const m=$('#mnav');if(!m)return;const u=a.startsWith('unit-')?a.slice(5):'',ic=k=>`<svg viewBox="0 0 24 24" aria-hidden="true">${MI[k]}</svg>`;
+  const L=(h,k,l)=>`<a href="#${h}" class="${a===h?'on':''}" ${a===h?'aria-current="page"':''}>${ic(k)}${l}</a>`;
+  m.innerHTML=L('beranda','home','Beranda')+`<button type="button" data-sh="unit" class="${u?'on':''}" aria-haspopup="dialog">${ic('unit')}${u?'Unit '+esc(u):'Unit'}</button>`+L('tokoh','tokoh','Tokoh')+L('glosarium','glos','Glosarium')+(Sess.role()!=='murid'?`<button type="button" data-sh="more" class="${/^(panduan-guru|dasbor)$/.test(a)?'on':''}" aria-haspopup="dialog">${ic('more')}Lainnya</button>`:'')}
+function sheet(title,rows){ov.className='ov sh';ov.innerHTML=`<div class="box sheet" role="dialog" aria-label="${esc(title)}"><div class="grab"></div><h3>${esc(title)}</h3>${rows}</div>`;$$('a',ov).forEach(a=>a.onclick=closeOv)}
+$('#mnav').addEventListener('click',e=>{const b=e.target.closest('[data-sh]');if(!b)return;const cur=location.hash.slice(1);
+  if(b.dataset.sh==='unit')sheet('Pilih unit',UNITS.map(u=>`<a class="si ${cur==='unit-'+u.id?'cur':''}" href="#unit-${u.id}"><i>${u.id}</i><span><b>${esc(u.judul.split(':')[0])}</b><small>${esc(u.periode)} · ${esc(u.waktu)}</small></span>${state.done[u.id]?'<em>Selesai</em>':''}</a>`).join(''));
+  else sheet('Lainnya',`<a class="si" href="#panduan-guru"><span><b>Panduan guru</b><small>Skenario, rubrik, episode sensitif</small></span></a>`+(Sess.role()==='guru'?`<a class="si" href="#dasbor"><span><b>Dasbor</b><small>Pantau progres kelas</small></span></a>`:''))});
+document.addEventListener('focusin',e=>{if(/^(INPUT|TEXTAREA|SELECT)$/.test(e.target.tagName))document.body.classList.add('typing')});
+document.addEventListener('focusout',()=>document.body.classList.remove('typing'));
+function renderNav(a){const nv0=$('#nav'),sl0=nv0.scrollLeft;nv0.innerHTML=[['beranda','Beranda'],...UNITS.map(u=>['unit-'+u.id,String(u.id),u]),['glosarium','Glosarium'],['tokoh','Tokoh'],...(Sess.role()!=='murid'?[['panduan-guru','Panduan guru']]:[]),...(Sess.role()==='guru'?[['dasbor','Dasbor']]:[])].map(([h,l,u])=>`<a href="#${h}" class="${a===h?'active':''} ${u&&state.done[u.id]?'done':''}" ${u?`title="${esc(u.judul)}" aria-label="Unit ${u.id}"`:''} ${a===h?'aria-current="page"':''}>${u?'Unit '+l:l}</a>`).join('');nv0.scrollLeft=sl0;const act=$('#nav a.active');if(act)ctr(act);fades();Fx.nav();renderMnav(a);Sess.paint()}
 function after(wide){wide=wide||/^(beranda|tokoh)?$/.test(location.hash.slice(1));app.classList.toggle('wide',!!wide);$$('#nav,.tl,.toc ol,.chips').forEach(x=>x.classList.add('dragx'));fades();jumpTop();app.focus({preventScroll:true});if(obs)obs.disconnect();obs=new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting){e.target.classList.add('in');obs.unobserve(e.target)}}),{rootMargin:'0px 0px -8% 0px'});$$('.rv').forEach(x=>obs.observe(x))}
+(function(){const bar=$('#bar');let on=getComputedStyle(bar).display!=='none',tk=0;
+  addEventListener('resize',()=>{on=getComputedStyle(bar).display!=='none'});
+  addEventListener('scroll',()=>{if(!on||tk)return;tk=requestAnimationFrame(()=>{tk=0;const h=document.documentElement;bar.style.transform='scaleX('+(h.scrollTop/Math.max(1,h.scrollHeight-h.clientHeight))+')'})},{passive:true})})();
 
 /* ---------- beranda ---------- */
 function viewHome(){renderNav('beranda');
@@ -69,8 +84,8 @@ function viewHome(){renderNav('beranda');
    <div class="stats"><div><b>${UNITS.length}</b><span>unit</span></div><div><b>${nT}</b><span>kartu tokoh bernama</span></div><div><b>${nG}</b><span>sumber di galeri</span></div><div><b>${UNITS[0].periode.slice(0,4)}–${UNITS[UNITS.length-1].periode.slice(-4)}</b><span>rentang waktu</span></div></div>
   </div></section>
   <p class="lead rv">Buku teks Sejarah kelas XI menyebut etnis Tionghoa pada sembilan halaman dan hanya menamai satu orang. Rumah tempat Sumpah Pemuda diikrarkan disebut, pemiliknya tidak. Rumah tempat Sukarno dan Hatta diinapkan di Rengasdengklok disebut, pemiliknya tidak. Modul ini menceritakan sisanya: dari pasar dan kampung tempat mereka hidup, lewat tokoh-tokoh bernama, sampai peristiwa besar yang sudah kalian kenal.</p>
-  <h2 class="rv">Lini masa</h2>
-  <div class="tl rv" role="list">${UNITS.map(u=>`<a role="listitem" href="#unit-${u.id}"><span class="y">${esc(u.periode)}</span><span class="t">Unit ${u.id} · ${esc(u.judul.split(':')[0])}</span></a>`).join('')}</div>
+  <h2 class="rv mhide">Lini masa</h2>
+  <div class="tl rv mhide" role="list">${UNITS.map(u=>`<a role="listitem" href="#unit-${u.id}"><span class="y">${esc(u.periode)}</span><span class="t">Unit ${u.id} · ${esc(u.judul.split(':')[0])}</span></a>`).join('')}</div>
   <h2 class="rv">Tiga kebiasaan membaca</h2>
   <div class="tahap rv">
     <div><b>Siapa yang membuat sumber ini?</b>Laporan pejabat VOC tentang 1740 ditulis oleh orang yang perlu membela diri; babad Jawa tentang peristiwa yang sama ditulis oleh pihak lain.</div>
@@ -180,18 +195,18 @@ addEventListener('hashchange',route);applyPrefs();Sess.init().then(s=>{if(s)setS
 
 /* ---------- gulir geser (mouse), pudar tepi, tinggi header, pusatkan item aktif ---------- */
 function ctr(el){const sc=el.closest('nav,ol');if(!sc||sc.scrollWidth<=sc.clientWidth+2)return;const a=el.getBoundingClientRect(),b=sc.getBoundingClientRect(),m=48;let d=0;if(a.left<b.left+m)d=a.left-b.left-m;else if(a.right>b.right-m)d=a.right-b.right+m;if(Math.abs(d)>1)sc.scrollTo({left:Math.max(0,sc.scrollLeft+d),behavior:'smooth'})}
-function fades(){$$('.dragx').forEach(e=>{const m=e.scrollWidth-e.clientWidth;e.style.setProperty('--fl',m>2&&e.scrollLeft>4?'28px':'0px');e.style.setProperty('--fr',m>2&&e.scrollLeft<m-4?'28px':'0px')})}
+function fades(L){L=L||$$('.dragx');const R=L.map(e=>[e.scrollWidth-e.clientWidth,e.scrollLeft]);
+  L.forEach((e,i)=>{const m=R[i][0],s=R[i][1],l=m>2&&s>4?'28px':'0px',r=m>2&&s<m-4?'28px':'0px',st=e.style;
+    if(st.getPropertyValue('--fl')!==l)st.setProperty('--fl',l);if(st.getPropertyValue('--fr')!==r)st.setProperty('--fr',r)})}
+let fq=0,fl=new Set();const fadesSoon=e=>{if(e)fl.add(e);if(fq)return;fq=requestAnimationFrame(()=>{fq=0;const L=[...fl];fl.clear();fades(L.length?L:undefined)})};
 (function(){let el=null,sx=0,sl=0,mv=false;
  document.addEventListener('pointerdown',e=>{mv=false;if(e.pointerType!=='mouse'||e.button)return;const t=e.target.closest('.dragx');if(!t||t.scrollWidth<=t.clientWidth)return;el=t;sx=e.clientX;sl=t.scrollLeft});
  addEventListener('pointermove',e=>{if(!el)return;const d=e.clientX-sx;if(!mv&&Math.abs(d)>5){mv=true;el.classList.add('drag')}if(mv)el.scrollLeft=sl-d});
  addEventListener('pointerup',()=>{if(el){const t=el;el=null;setTimeout(()=>t.classList.remove('drag'),0)}});
  document.addEventListener('click',e=>{if(mv){e.preventDefault();e.stopPropagation();mv=false}},true);
  document.addEventListener('dragstart',e=>{if(e.target.closest&&e.target.closest('.dragx'))e.preventDefault()});
- document.addEventListener('scroll',e=>{if(e.target.classList&&e.target.classList.contains('dragx'))fades()},true);
- addEventListener('resize',fades);
+ document.addEventListener('scroll',e=>{if(e.target.classList&&e.target.classList.contains('dragx'))fadesSoon(e.target)},true);
+ addEventListener('resize',()=>fadesSoon());
  const hd=document.querySelector('header.top'),sh=()=>document.documentElement.style.setProperty('--hh',hd.offsetHeight+'px');sh();
  if(window.ResizeObserver)new ResizeObserver(sh).observe(hd);
 })();
-
-/* sinkronkan theme-color peramban dengan tema */
-{const _ap=applyPrefs;applyPrefs=function(){_ap();setTC()};setTC()}
