@@ -4,13 +4,14 @@
 @media(prefers-color-scheme:dark){:root:not([data-theme=light]){--ok:#58B58C;--warn:#D9A441}}
 :root[data-theme=dark]{--ok:#58B58C;--warn:#D9A441}
 /* ---- tirai transisi halaman ---- */
-.curtain{position:fixed;inset:0;z-index:90;pointer-events:none;display:none}
+.curtain{position:fixed;top:0;left:0;width:100%;height:100vh;height:100lvh;z-index:90;pointer-events:none;display:none;overflow:hidden;contain:layout paint}
 .curtain.on{display:block}
-.curtain i{position:absolute;inset:0;clip-path:inset(0 100% 0 0);will-change:clip-path;display:block}
+.curtain i{position:absolute;top:0;left:0;width:100%;height:100%;display:block;transform:translate3d(-101%,0,0);will-change:transform;backface-visibility:hidden}
+@media(hover:none){html.fx{overflow:hidden}}
 .curtain .c1{background:var(--red)}
 .curtain .c2{background:var(--gold)}
 .curtain .c3{background:var(--bg);display:grid;place-items:center}
-.curtain .lab{text-align:center;position:relative;opacity:0;padding:0 24px}
+.curtain .lab{text-align:center;position:relative;opacity:0;padding:0 24px;max-width:100%}
 .curtain .z{display:block;font:600 clamp(7rem,30vw,15rem)/.9 var(--cjk);color:var(--red);opacity:.09;position:absolute;left:50%;top:50%;transform:translate(-50%,-52%);pointer-events:none}
 .curtain b{display:block;position:relative;font:600 clamp(1.8rem,6vw,3rem)/1.1 var(--serif);color:var(--ink)}
 .curtain small{display:block;position:relative;margin-top:10px;font:500 .8rem var(--sans);letter-spacing:.2em;text-transform:uppercase;color:var(--gold-t)}
