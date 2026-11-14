@@ -56,7 +56,6 @@ document.addEventListener('keydown',e=>{if(e.key==='Escape')closeOv();if(e.key==
 /* ---------- navigasi ---------- */
 function renderNav(a){const nv0=$('#nav'),sl0=nv0.scrollLeft;nv0.innerHTML=[['beranda','Beranda'],...UNITS.map(u=>['unit-'+u.id,String(u.id),u]),['glosarium','Glosarium'],['tokoh','Tokoh'],...(Sess.role()!=='murid'?[['panduan-guru','Panduan guru']]:[]),...(Sess.role()==='guru'?[['dasbor','Dasbor']]:[])].map(([h,l,u])=>`<a href="#${h}" class="${a===h?'active':''} ${u&&state.done[u.id]?'done':''}" ${u?`title="${esc(u.judul)}" aria-label="Unit ${u.id}"`:''} ${a===h?'aria-current="page"':''}>${u?'Unit '+l:l}</a>`).join('');nv0.scrollLeft=sl0;const act=$('#nav a.active');if(act)ctr(act);fades();Fx.nav();Sess.paint()}
 function after(wide){wide=wide||/^(beranda|tokoh)?$/.test(location.hash.slice(1));app.classList.toggle('wide',!!wide);$$('#nav,.tl,.toc ol,.chips').forEach(x=>x.classList.add('dragx'));fades();jumpTop();app.focus({preventScroll:true});if(obs)obs.disconnect();obs=new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting){e.target.classList.add('in');obs.unobserve(e.target)}}),{rootMargin:'0px 0px -8% 0px'});$$('.rv').forEach(x=>obs.observe(x))}
-addEventListener('scroll',()=>{const h=document.documentElement;$('#bar').style.transform='scaleX('+(h.scrollTop/Math.max(1,h.scrollHeight-h.clientHeight))+')'},{passive:true});
 
 /* ---------- beranda ---------- */
 function viewHome(){renderNav('beranda');
@@ -193,3 +192,6 @@ function fades(){$$('.dragx').forEach(e=>{const m=e.scrollWidth-e.clientWidth;e.
  const hd=document.querySelector('header.top'),sh=()=>document.documentElement.style.setProperty('--hh',hd.offsetHeight+'px');sh();
  if(window.ResizeObserver)new ResizeObserver(sh).observe(hd);
 })();
+
+/* sinkronkan theme-color peramban dengan tema */
+{const _ap=applyPrefs;applyPrefs=function(){_ap();setTC()};setTC()}
