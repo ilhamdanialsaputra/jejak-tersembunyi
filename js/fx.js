@@ -32,6 +32,7 @@ const Fx=(()=>{
     next=fn;
     if(busy){if(phase==='reveal'){const f=next;next=null;f()}return}
     busy=true;phase='cover';
+    const wd=setTimeout(()=>{if(next){const q=next;next=null;q()}if(el){el.getAnimations({subtree:true}).forEach(x=>x.cancel());el.classList.remove('on')}document.documentElement.classList.remove('fx');busy=false;phase=''},2600);
     try{
       if(!el)build();
       const d=order(b)>=order(a)?1:-1,P=[...el.children],lab=el.querySelector('.lab'),[t,s]=label(b);
@@ -50,6 +51,7 @@ const Fx=(()=>{
       app.animate([{opacity:0,transform:`translateX(${d*T.x}px)`},{opacity:1,transform:'none'}],{duration:M?520:760,delay:M?90:140,easing:OUT,fill:'backwards'});
       await Promise.all([...P].reverse().map((n,i)=>run(n,[{transform:full},{transform:to}],{duration:T.r,delay:i*T.s})));
     }finally{
+      clearTimeout(wd);
       if(el){el.getAnimations({subtree:true}).forEach(x=>x.cancel());el.classList.remove('on')}
       document.documentElement.classList.remove('fx');
       if(next){const f=next;next=null;f()}
