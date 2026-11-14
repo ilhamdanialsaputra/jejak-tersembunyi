@@ -68,7 +68,7 @@ const Fx=(()=>{
     i.style.opacity=1;i.style.transition='';i.style.transform=`translateX(${x}px)`;i.style.width=w+'px';pi={x,w};
   }
   let rz;addEventListener('resize',()=>{clearTimeout(rz);rz=setTimeout(()=>{pi=null;nav()},150)});
-  (window.requestIdleCallback||setTimeout)(()=>{if(!el&&!reduce())build()},400);
+  const pre=()=>{if(!el&&!reduce())build()};window.requestIdleCallback?requestIdleCallback(pre,{timeout:600}):setTimeout(pre,400);
   return{go,nav};
 })();
 
