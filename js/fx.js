@@ -43,7 +43,7 @@ const Fx=(()=>{
       await Promise.all(P.map((n,i)=>run(n,[{transform:from},{transform:full}],{duration:T.c,delay:i*T.s})));
       lab.animate([{opacity:0},{opacity:1}],{duration:220,fill:'both',easing:OUT});
       jumpTop();const f=next;next=null;if(f)f();jumpTop();
-      await wait(T.h);
+      await wait(T.h);await new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r)));
       phase='reveal';
       lab.animate([{opacity:1},{opacity:0}],{duration:160,fill:'both'});
       const app=document.getElementById('app');
@@ -68,5 +68,10 @@ const Fx=(()=>{
     i.style.opacity=1;i.style.transition='';i.style.transform=`translateX(${x}px)`;i.style.width=w+'px';pi={x,w};
   }
   let rz;addEventListener('resize',()=>{clearTimeout(rz);rz=setTimeout(()=>{pi=null;nav()},150)});
+  (window.requestIdleCallback||setTimeout)(()=>{if(!el&&!reduce())build()},400);
   return{go,nav};
 })();
+
+/* theme-color peramban mengikuti tema (AMOLED hitam saat gelap) */
+function setTC(){const f=document.documentElement.dataset.theme;
+  document.querySelectorAll('meta[name=theme-color]').forEach(m=>{m.content=f?(f==='dark'?'#000000':'#FFFFFF'):(/dark/.test(m.media)?'#000000':'#FFFFFF')})}
