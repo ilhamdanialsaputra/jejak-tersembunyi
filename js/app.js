@@ -53,9 +53,9 @@ $('#bSearch').onclick=openSearch;
 document.addEventListener('keydown',e=>{if(e.key==='Escape')closeOv();if(e.key==='/'&&!/INPUT|TEXTAREA/.test(document.activeElement.tagName)){e.preventDefault();openSearch()}});
 
 /* ---------- navigasi ---------- */
-function renderNav(a){$('#nav').innerHTML=[['beranda','Beranda'],...UNITS.map(u=>['unit-'+u.id,String(u.id),u]),['glosarium','Glosarium'],['tokoh','Tokoh'],['panduan-guru','Panduan guru']].map(([h,l,u])=>`<a href="#${h}" class="${a===h?'active':''} ${u&&state.done[u.id]?'done':''}" ${u?`title="${esc(u.judul)}" aria-label="Unit ${u.id}"`:''} ${a===h?'aria-current="page"':''}>${u?'Unit '+l:l}</a>`).join('');const act=$('#nav a.active');if(act)act.scrollIntoView({inline:'center',block:'nearest'})}
-function after(wide){app.classList.toggle('wide',!!wide);window.scrollTo(0,0);app.focus({preventScroll:true});if(obs)obs.disconnect();obs=new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting){e.target.classList.add('in');obs.unobserve(e.target)}}),{rootMargin:'0px 0px -8% 0px'});$$('.rv').forEach(x=>obs.observe(x))}
-addEventListener('scroll',()=>{const h=document.documentElement;$('#bar').style.width=(h.scrollTop/Math.max(1,h.scrollHeight-h.clientHeight)*100)+'%'},{passive:true});
+function renderNav(a){const nv0=$('#nav'),sl0=nv0.scrollLeft;nv0.innerHTML=[['beranda','Beranda'],...UNITS.map(u=>['unit-'+u.id,String(u.id),u]),['glosarium','Glosarium'],['tokoh','Tokoh'],['panduan-guru','Panduan guru']].map(([h,l,u])=>`<a href="#${h}" class="${a===h?'active':''} ${u&&state.done[u.id]?'done':''}" ${u?`title="${esc(u.judul)}" aria-label="Unit ${u.id}"`:''} ${a===h?'aria-current="page"':''}>${u?'Unit '+l:l}</a>`).join('');nv0.scrollLeft=sl0;const act=$('#nav a.active');if(act)ctr(act);fades()}
+function after(wide){wide=wide||/^(beranda|tokoh)?$/.test(location.hash.slice(1));app.classList.toggle('wide',!!wide);$$('#nav,.tl,.toc ol,.chips').forEach(x=>x.classList.add('dragx'));fades();window.scrollTo(0,0);app.focus({preventScroll:true});if(obs)obs.disconnect();obs=new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting){e.target.classList.add('in');obs.unobserve(e.target)}}),{rootMargin:'0px 0px -8% 0px'});$$('.rv').forEach(x=>obs.observe(x))}
+addEventListener('scroll',()=>{const h=document.documentElement;$('#bar').style.transform='scaleX('+(h.scrollTop/Math.max(1,h.scrollHeight-h.clientHeight))+')'},{passive:true});
 
 /* ---------- beranda ---------- */
 function viewHome(){renderNav('beranda');
@@ -113,9 +113,9 @@ function viewUnit(id){const u=UNITS.find(x=>x.id===id);if(!u){location.hash='#be
   $$('[data-f]',app).forEach(b=>b.onclick=()=>{$$('[data-f]',app).forEach(x=>x.setAttribute('aria-pressed',x===b));$$('figure',app).forEach(f=>f.classList.toggle('hidden',!!b.dataset.f&&f.dataset.j!==b.dataset.f))});
   $('#selesai').onclick=()=>{state.done[u.id]=!state.done[u.id];save();viewUnit(id)};
   /* daftar isi + scrollspy */
-  const seen=state.seen[u.id]=state.seen[u.id]||{},tb=$$('.toc [data-go]',app),mark=()=>{tb.forEach(b=>b.classList.toggle('seen',!!seen[b.dataset.go]));$('#tp').style.width=Object.keys(seen).length/8*100+'%'};mark();
+  const seen=state.seen[u.id]=state.seen[u.id]||{},tb=$$('.toc [data-go]',app),mark=()=>{tb.forEach(b=>b.classList.toggle('seen',!!seen[b.dataset.go]));$('#tp').style.transform='scaleX('+Object.keys(seen).length/8+')'};mark();
   tb.forEach(b=>b.onclick=()=>$('#s'+b.dataset.go).scrollIntoView({behavior:'smooth'}));
-  if(spy)spy.disconnect();spy=new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting){const n=e.target.dataset.s;tb.forEach(b=>b.classList.toggle('on',b.dataset.go===n));if(!seen[n]){seen[n]=1;save();mark()}}}),{rootMargin:'-30% 0px -60% 0px'});$$('.sec',app).forEach(s=>spy.observe(s));
+  if(spy)spy.disconnect();spy=new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting){const n=e.target.dataset.s;tb.forEach(b=>{const on=b.dataset.go===n;b.classList.toggle('on',on);if(on)ctr(b)});if(!seen[n]){seen[n]=1;save();mark()}}}),{rootMargin:'-30% 0px -60% 0px'});$$('.sec',app).forEach(s=>spy.observe(s));
   after(true)}
 
 /* ---------- glosarium, tokoh ---------- */
@@ -170,3 +170,18 @@ function route(){closeOv();const h=(location.hash||'#beranda').slice(1);
   if(h===''||h==='beranda')return viewHome();if(h.startsWith('unit-'))return viewUnit(parseInt(h.slice(5),10));
   if(h==='glosarium')return viewGlosarium();if(h==='tokoh')return viewTokoh();if(h==='panduan-guru')return viewGuru();if(h==='periksa')return viewPeriksa();viewHome()}
 addEventListener('hashchange',route);applyPrefs();route();
+
+/* ---------- gulir geser (mouse), pudar tepi, tinggi header, pusatkan item aktif ---------- */
+function ctr(el){const sc=el.closest('nav,ol');if(!sc||sc.scrollWidth<=sc.clientWidth+2)return;sc.scrollTo({left:el.offsetLeft-(sc.clientWidth-el.offsetWidth)/2,behavior:'smooth'})}
+function fades(){$$('.dragx').forEach(e=>{const m=e.scrollWidth-e.clientWidth;e.style.setProperty('--fl',m>2&&e.scrollLeft>4?'28px':'0px');e.style.setProperty('--fr',m>2&&e.scrollLeft<m-4?'28px':'0px')})}
+(function(){let el=null,sx=0,sl=0,mv=false;
+ document.addEventListener('pointerdown',e=>{mv=false;if(e.pointerType!=='mouse'||e.button)return;const t=e.target.closest('.dragx');if(!t||t.scrollWidth<=t.clientWidth)return;el=t;sx=e.clientX;sl=t.scrollLeft});
+ addEventListener('pointermove',e=>{if(!el)return;const d=e.clientX-sx;if(!mv&&Math.abs(d)>5){mv=true;el.classList.add('drag')}if(mv)el.scrollLeft=sl-d});
+ addEventListener('pointerup',()=>{if(el){const t=el;el=null;setTimeout(()=>t.classList.remove('drag'),0)}});
+ document.addEventListener('click',e=>{if(mv){e.preventDefault();e.stopPropagation();mv=false}},true);
+ document.addEventListener('dragstart',e=>{if(e.target.closest&&e.target.closest('.dragx'))e.preventDefault()});
+ document.addEventListener('scroll',e=>{if(e.target.classList&&e.target.classList.contains('dragx'))fades()},true);
+ addEventListener('resize',fades);
+ const hd=document.querySelector('header.top'),sh=()=>document.documentElement.style.setProperty('--hh',hd.offsetHeight+'px');sh();
+ if(window.ResizeObserver)new ResizeObserver(sh).observe(hd);
+})();
