@@ -37,18 +37,21 @@ const Fx=(()=>{
       const d=order(b)>=order(a)?1:-1,P=[...el.children],lab=el.querySelector('.lab'),[t,s]=label(b);
       lab.querySelector('b').textContent=t;lab.querySelector('small').textContent=s;
       el.classList.add('on');
-      const from=d>0?'inset(0 100% 0 0)':'inset(0 0 0 100%)',full='inset(0 0 0 0)',to=d>0?'inset(0 0 0 100%)':'inset(0 100% 0 0)';
-      await Promise.all(P.map((n,i)=>run(n,[{clipPath:from},{clipPath:full}],{duration:380,delay:i*70})));
-      lab.animate([{opacity:0,transform:'translateY(14px)'},{opacity:1,transform:'none'}],{duration:300,fill:'both',easing:OUT});
+      const M=matchMedia('(max-width:899px)').matches,T=M?{c:320,s:55,h:90,r:380,x:18}:{c:380,s:70,h:170,r:460,x:40};
+      const from=d>0?'translate3d(-101%,0,0)':'translate3d(101%,0,0)',full='translate3d(0,0,0)',to=d>0?'translate3d(101%,0,0)':'translate3d(-101%,0,0)';
+      document.documentElement.classList.add('fx');
+      await Promise.all(P.map((n,i)=>run(n,[{transform:from},{transform:full}],{duration:T.c,delay:i*T.s})));
+      lab.animate([{opacity:0},{opacity:1}],{duration:220,fill:'both',easing:OUT});
       jumpTop();const f=next;next=null;if(f)f();jumpTop();
-      await wait(170);
+      await wait(T.h);
       phase='reveal';
       lab.animate([{opacity:1},{opacity:0}],{duration:160,fill:'both'});
       const app=document.getElementById('app');
-      app.animate([{opacity:0,transform:`translateX(${d*40}px)`},{opacity:1,transform:'none'}],{duration:760,delay:140,easing:OUT,fill:'backwards'});
-      await Promise.all([...P].reverse().map((n,i)=>run(n,[{clipPath:full},{clipPath:to}],{duration:460,delay:i*70})));
+      app.animate([{opacity:0,transform:`translateX(${d*T.x}px)`},{opacity:1,transform:'none'}],{duration:M?520:760,delay:M?90:140,easing:OUT,fill:'backwards'});
+      await Promise.all([...P].reverse().map((n,i)=>run(n,[{transform:full},{transform:to}],{duration:T.r,delay:i*T.s})));
     }finally{
       if(el){el.getAnimations({subtree:true}).forEach(x=>x.cancel());el.classList.remove('on')}
+      document.documentElement.classList.remove('fx');
       if(next){const f=next;next=null;f()}
       busy=false;phase='';
     }
