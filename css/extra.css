@@ -114,3 +114,60 @@ button.lnk:hover{background:none;color:var(--red);box-shadow:none;transform:none
 
 @media(prefers-reduced-motion:reduce){.curtain{display:none!important}.tr i{transition:none}}
 @media print{.curtain,.authbox,#bAcc{display:none!important}}
+
+/* ===== v5: AMOLED, animasi ringan, tata letak seluler ===== */
+@media(prefers-color-scheme:dark){:root:not([data-theme=light]){--bg:#000;--paper:#0A0A0C;--surface:#0E0E10;--rule:#222226;--rule2:#35353B;--red-soft:#231312;--gold-soft:#151518}}
+:root[data-theme=dark]{--bg:#000;--paper:#0A0A0C;--surface:#0E0E10;--rule:#222226;--rule2:#35353B;--red-soft:#231312;--gold-soft:#151518}
+header.top,body::before{background:var(--bg)}
+.ov{background:rgba(0,0,0,.84)}
+html{-webkit-tap-highlight-color:transparent}
+a,button{touch-action:manipulation}
+
+@media(max-width:899px){
+:root{--gut:16px}
+main{padding-top:20px;padding-bottom:56px}
+.brand{padding:8px 0 4px}
+.tools{gap:2px}
+button.icon{width:42px;height:42px;border-color:transparent;border-radius:10px}
+button.icon:hover{border-color:transparent}
+nav.units{height:48px;border-top:0;gap:6px;padding:0 calc(var(--gut) - 14px);-webkit-mask-image:none;mask-image:none;overscroll-behavior-x:contain;-webkit-overflow-scrolling:touch}
+nav.units a{margin:8px 0;padding:0 14px;border-radius:999px;font-size:.9rem}
+nav.units a::after{display:none}
+nav.units a.active{background:var(--red-soft);color:var(--red);font-weight:600}
+.dragx{-webkit-mask-image:none;mask-image:none}
+header.top{position:relative;top:auto}
+aside.toc{top:env(safe-area-inset-top,0px);margin-bottom:14px}
+.toc button{min-height:46px;padding:0 12px;align-items:center;font-size:.86rem}
+.sec{scroll-margin-top:64px;margin-bottom:2rem}
+h2{font-size:1.2rem;margin-bottom:.8em;gap:10px}
+.tl,h2:has(+.tl){display:none}
+.hero{padding:4px 0 24px;margin-bottom:28px;border-top:0;border-bottom:1px solid var(--rule)}
+.hero .meta,.hero .acts .ghost{display:none}
+.hero h1{font-size:2rem}
+.hero .sub{font-size:1.05rem;margin-bottom:1.1rem}
+.stats{margin-top:1.3rem}.stats div{padding:12px 14px}
+.lead{font-size:1.02rem;line-height:1.7}
+.peta,.cards,.gal,.tahap,.banding,.bt{gap:10px}
+.peta a,.card,.tahap div,.sumber,.bt div{padding:16px}
+.peta a:active,.card:active{background:var(--paper)}
+.pemantik{padding:14px;gap:14px}
+.ph{min-height:104px}
+.chips{flex-wrap:nowrap;overflow-x:auto;margin:0 calc(-1*var(--gut)) 14px;padding:0 var(--gut);scrollbar-width:none}
+.chips::-webkit-scrollbar{display:none}
+.chips button{flex:none;min-height:38px;padding:6px 16px}
+button,.btn{min-height:44px;display:inline-flex;align-items:center;justify-content:center;padding:10px 18px}
+.chips button,.toc button{display:flex}
+textarea,.fl input,.find{font-size:16px}
+textarea{min-height:104px}
+.btnrow{gap:8px;margin:1.4em 0}
+.ov{padding:max(12px,env(safe-area-inset-top,0px)) 12px 12px}
+footer{font-size:.76rem;padding-bottom:40px}
+}
+@media(max-width:699px){
+.tscroll{border:0}
+.tscroll table:has(th:nth-child(2):last-child){min-width:0;background:none}
+.tscroll table:has(th:nth-child(2):last-child) thead{display:none}
+.tscroll table:has(th:nth-child(2):last-child) :is(tbody,tr,td){display:block;border:0;padding:0}
+.tscroll table:has(th:nth-child(2):last-child) tr{border:1px solid var(--rule);border-radius:2px;background:var(--surface);padding:12px 14px;margin-bottom:8px}
+.tscroll table:has(th:nth-child(2):last-child) td:first-child{margin-bottom:4px}
+}
