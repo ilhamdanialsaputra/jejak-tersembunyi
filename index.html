@@ -9,6 +9,8 @@
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,500;0,600;1,500&family=Inter:wght@400;500;600&display=swap">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@600&text=%E5%8F%B2&display=swap">
 <link rel="stylesheet" href="css/style.css">
+<link rel="stylesheet" href="css/extra.css">
+<meta name="theme-color" content="#9A2B21">
 </head>
 <body>
 <a class="skip" href="#app">Lewati ke isi</a>
@@ -16,6 +18,7 @@
   <a class="brand" href="#beranda"><span class="logo" aria-hidden="true" lang="zh">史</span><span>Jejak yang Tersembunyi<small>E-modul suplemen Sejarah kelas XI · peran etnis Tionghoa dalam sejarah Indonesia</small></span></a>
   <nav class="units dragx" id="nav" aria-label="Navigasi modul"></nav>
   <div class="tools">
+    <button class="icon" id="bAcc" aria-label="Masuk" title="Akun"></button>
     <button class="icon" id="bSearch" aria-label="Cari (tekan /)" title="Cari (/)"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="6.5"/><path d="M16 16l5 5"/></svg></button>
     <button class="icon" id="bSet" aria-label="Pengaturan tampilan" aria-expanded="false" title="Tampilan"><svg viewBox="0 0 24 24"><path d="M4 7h10M18 7h2M4 17h2M10 17h10"/><circle cx="16" cy="7" r="2"/><circle cx="8" cy="17" r="2"/></svg></button>
   </div>
@@ -24,12 +27,15 @@
 <main id="app" aria-live="polite" tabindex="-1"></main>
 <footer>
   <div class="divider" aria-hidden="true"></div>
-  <p><b>Prototipe (dummy) e-modul</b> berdasarkan hasil analisis kebutuhan dua SMA di Jakarta, September 2026. Foto, dokumen, audio, dan video pada galeri ditampilkan sebagai keterangan sumber; berkas asli dimasukkan pada tahap pengembangan setelah izin koleksi diperoleh. Catatan refleksi dan jawaban tersimpan hanya di peramban ini.</p>
+  <p><b>Prototipe (dummy) e-modul</b> berdasarkan hasil analisis kebutuhan dua SMA di Jakarta, September 2026. Foto, dokumen, audio, dan video pada galeri ditampilkan sebagai keterangan sumber; berkas asli dimasukkan pada tahap pengembangan setelah izin koleksi diperoleh. Catatan refleksi dan jawaban tersimpan otomatis.</p>
   <p>Teks penyusun berlisensi CC BY-SA 4.0. Sumber gambar dan dokumen mengikuti lisensi koleksi masing-masing. <a href="#periksa">Periksa kelengkapan (penyusun)</a></p>
 </footer>
 <div class="tip hidden" id="tip" role="tooltip"></div>
 <div class="ov hidden" id="ov"></div>
 <script src="js/data.js"></script>
+<script src="js/store.js"></script>
+<script src="js/fx.js"></script>
+<script src="js/auth.js"></script>
 <script src="js/app.js"></script>
 </body>
 </html>
