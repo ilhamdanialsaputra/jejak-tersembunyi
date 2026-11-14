@@ -6,6 +6,11 @@
    lalu tirai terbuka dan isi masuk dari arah yang sama.
    Otomatis dimatikan bila perangkat meminta "kurangi gerakan".
    ============================================================ */
+/* lompat ke atas seketika (mengabaikan scroll-behavior:smooth di CSS) */
+function jumpTop(){const r=document.documentElement,o=r.style.scrollBehavior;
+  r.style.scrollBehavior='auto';window.scrollTo(0,0);r.scrollTop=0;document.body.scrollTop=0;
+  requestAnimationFrame(()=>{r.style.scrollBehavior=o});}
+try{history.scrollRestoration='manual'}catch(e){}
 const Fx=(()=>{
   const reduce=()=>matchMedia('(prefers-reduced-motion:reduce)').matches||!Element.prototype.animate;
   const EASE='cubic-bezier(.76,0,.18,1)',OUT='cubic-bezier(.2,.7,.2,1)';
@@ -35,7 +40,7 @@ const Fx=(()=>{
       const from=d>0?'inset(0 100% 0 0)':'inset(0 0 0 100%)',full='inset(0 0 0 0)',to=d>0?'inset(0 0 0 100%)':'inset(0 100% 0 0)';
       await Promise.all(P.map((n,i)=>run(n,[{clipPath:from},{clipPath:full}],{duration:380,delay:i*70})));
       lab.animate([{opacity:0,transform:'translateY(14px)'},{opacity:1,transform:'none'}],{duration:300,fill:'both',easing:OUT});
-      const f=next;next=null;if(f)f();
+      jumpTop();const f=next;next=null;if(f)f();jumpTop();
       await wait(170);
       phase='reveal';
       lab.animate([{opacity:1},{opacity:0}],{duration:160,fill:'both'});
