@@ -209,3 +209,11 @@ figure:hover img{transform:none}
 .tl{padding:30px 10px 12px;margin:0 -10px 1.5rem}.tl::before{left:10px;width:max(calc(100% - 20px),1050px)}
 .tl a::before{left:2px;top:2px}.tl a{padding-left:0}.tl .y,.tl .t{padding-left:2px}
 .tl::before{top:37px}
+/* ===== v4 ===== */
+:root{--bg:#fff;--paper:#F7F7F8;--surface:#fff;--ink:#18181B;--muted:#5C5C64;--rule:#E4E4E7;--rule2:#D0D0D6;--gold:#8C8C94;--gold-t:#66666E;--gold-soft:#F4F4F5;--red-soft:#FBEEEC}
+@media(prefers-color-scheme:dark){:root:not([data-theme=light]){--gold:#9A9CA6;--gold-t:#B4B6BF;--gold-soft:#23262D}}
+:root[data-theme=dark]{--gold:#9A9CA6;--gold-t:#B4B6BF;--gold-soft:#23262D}
+.bar,.toc .prog{display:none}
+.stats{border:1px solid var(--rule)}.stats span{display:block;line-height:1.4}
+.tl{scroll-snap-type:none;padding:30px 14px 12px;margin:0 -14px 1.5rem}.tl a{scroll-snap-align:none}
+.tl::before{left:14px;width:max(calc(100% - 28px),1050px)}.tl a::before{left:6px}.tl .y,.tl .t{padding-left:6px}
