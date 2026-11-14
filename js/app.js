@@ -172,7 +172,7 @@ function route(){closeOv();const h=(location.hash||'#beranda').slice(1);
 addEventListener('hashchange',route);applyPrefs();route();
 
 /* ---------- gulir geser (mouse), pudar tepi, tinggi header, pusatkan item aktif ---------- */
-function ctr(el){const sc=el.closest('nav,ol');if(!sc||sc.scrollWidth<=sc.clientWidth+2)return;sc.scrollTo({left:el.offsetLeft-(sc.clientWidth-el.offsetWidth)/2,behavior:'smooth'})}
+function ctr(el){const sc=el.closest('nav,ol');if(!sc||sc.scrollWidth<=sc.clientWidth+2)return;const a=el.getBoundingClientRect(),b=sc.getBoundingClientRect(),m=48;let d=0;if(a.left<b.left+m)d=a.left-b.left-m;else if(a.right>b.right-m)d=a.right-b.right+m;if(Math.abs(d)>1)sc.scrollTo({left:Math.max(0,sc.scrollLeft+d),behavior:'smooth'})}
 function fades(){$$('.dragx').forEach(e=>{const m=e.scrollWidth-e.clientWidth;e.style.setProperty('--fl',m>2&&e.scrollLeft>4?'28px':'0px');e.style.setProperty('--fr',m>2&&e.scrollLeft<m-4?'28px':'0px')})}
 (function(){let el=null,sx=0,sl=0,mv=false;
  document.addEventListener('pointerdown',e=>{mv=false;if(e.pointerType!=='mouse'||e.button)return;const t=e.target.closest('.dragx');if(!t||t.scrollWidth<=t.clientWidth)return;el=t;sx=e.clientX;sl=t.scrollLeft});
