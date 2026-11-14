@@ -1,32 +1,8 @@
 /* Lapisan desain tambahan (dimuat setelah style.css): penyempurnaan visual,
    indikator tab, tirai transisi, halaman masuk, dasbor guru. */
-:root{--r:12px;--r2:8px;--ring:0 0 0 3px color-mix(in srgb,var(--red) 22%,transparent);--ok:#2F7D5B;--warn:#B7791F}
+:root{--r:6px;--r2:4px;--ring:0 0 0 3px color-mix(in srgb,var(--red) 22%,transparent);--ok:#2F7D5B;--warn:#B7791F}
 @media(prefers-color-scheme:dark){:root:not([data-theme=light]){--ok:#58B58C;--warn:#D9A441}}
 :root[data-theme=dark]{--ok:#58B58C;--warn:#D9A441}
-::selection{background:color-mix(in srgb,var(--red) 24%,transparent)}
-:focus-visible{outline:2px solid var(--red);outline-offset:2px;border-radius:4px}
-
-/* ---- penyempurnaan umum ---- */
-header.top{background:color-mix(in srgb,var(--bg) 80%,transparent)!important;-webkit-backdrop-filter:saturate(1.5) blur(16px);backdrop-filter:saturate(1.5) blur(16px)}
-button,.btn{border-radius:var(--r2);padding:11px 20px;font-weight:600;letter-spacing:.005em;transition:background .2s,color .2s,border-color .2s,transform .2s var(--ease),box-shadow .25s}
-button:hover:not(:disabled),.btn:hover{box-shadow:0 6px 16px -8px color-mix(in srgb,var(--red) 70%,transparent);transform:translateY(-1px)}
-button:disabled{opacity:.55;cursor:wait}
-button.icon{border-radius:10px}
-.hero,.card,.sumber,.callout,.qa textarea,.cek textarea,.find,.pop,.ov .box,.ph,figure,.stats>*{border-radius:var(--r)}
-.card,.gal figure{transition:transform .35s var(--ease),box-shadow .35s var(--ease),border-color .25s}
-.card:hover,.gal figure:hover{transform:translateY(-4px);box-shadow:var(--sh);border-color:var(--rule2)}
-textarea,input,select{font:inherit;color:var(--ink)}
-textarea:focus,.find:focus,.fl input:focus{outline:0;border-color:var(--red);box-shadow:var(--ring)}
-.logo{border-radius:9px}
-.hero::after{border-radius:var(--r) 0 0 var(--r)}
-
-/* ---- indikator tab yang meluncur ---- */
-nav.units{position:relative}
-nav.units a::after{display:none}
-nav.units a:hover{color:var(--ink)}
-nav.units .ind{position:absolute;left:0;bottom:0;height:3px;width:0;border-radius:3px 3px 0 0;background:linear-gradient(90deg,var(--red),var(--gold));pointer-events:none;
-  transition:transform .55s var(--ease),width .45s var(--ease),opacity .2s;will-change:transform,width}
-
 /* ---- tirai transisi halaman ---- */
 .curtain{position:fixed;inset:0;z-index:90;pointer-events:none;display:none}
 .curtain.on{display:block}
@@ -51,10 +27,10 @@ main{animation:none}
 .box.acc .btnrow{margin:14px 0 0;justify-content:center}
 
 /* ---- halaman masuk ---- */
-body.auth .units,body.auth .tools,body.auth footer,body.auth .brand small{display:none!important}
-body.auth .topin{grid-template-columns:1fr;min-height:56px}
-body.auth main{max-width:1080px}
-.auth{display:grid;gap:0;border:1px solid var(--rule);border-radius:18px;overflow:hidden;background:var(--surface);box-shadow:var(--sh);min-height:min(620px,calc(100svh - 150px))}
+body.is-auth .units,body.is-auth .tools,body.is-auth footer,body.is-auth .brand small{display:none!important}
+body.is-auth .topin{grid-template-columns:1fr;min-height:56px}
+body.is-auth main{max-width:1080px}
+.authbox{display:grid;gap:0;border:1px solid var(--rule);border-radius:6px;overflow:hidden;background:var(--surface);box-shadow:var(--sh)}
 .ab{position:relative;padding:clamp(28px,5vw,52px);background:linear-gradient(155deg,var(--red) 0%,var(--red2) 100%);color:#fff;display:flex;flex-direction:column;justify-content:center;gap:6px;overflow:hidden}
 .ab::before{content:"史";position:absolute;right:-.12em;bottom:-.22em;font:600 clamp(11rem,28vw,20rem)/1 var(--cjk);opacity:.09}
 .ab .logo{background:#fff;color:var(--red);outline-color:rgba(255,255,255,.5);margin-bottom:14px}
@@ -78,7 +54,7 @@ body.auth main{max-width:1080px}
 button.full{width:100%;padding:13px}
 button.lnk{display:block;margin:16px auto 0;background:none;border:0;color:var(--muted);font-weight:500;font-size:.84rem;text-decoration:underline;text-underline-offset:3px;padding:6px}
 button.lnk:hover{background:none;color:var(--red);box-shadow:none;transform:none}
-@media(min-width:860px){.auth{grid-template-columns:1.05fr 1fr}}
+@media(min-width:860px){.authbox{grid-template-columns:1.05fr 1fr}}
 
 /* ---- dasbor guru ---- */
 .dash{display:grid;gap:20px}
@@ -135,5 +111,5 @@ button.lnk:hover{background:none;color:var(--red);box-shadow:none;transform:none
 .ans small{display:block;color:var(--muted);font-size:.76rem;margin-bottom:4px}.ans p{margin:0;font-size:.92rem;line-height:1.6;white-space:pre-wrap}
 @media(max-width:560px){.ov{padding:0}.box.det{max-height:100svh;height:100svh;border-radius:0}}
 
-@media(prefers-reduced-motion:reduce){.curtain{display:none!important}nav.units .ind{transition:none}.tr i{transition:none}}
-@media print{.curtain,.auth,#bAcc{display:none!important}}
+@media(prefers-reduced-motion:reduce){.curtain{display:none!important}.tr i{transition:none}}
+@media print{.curtain,.authbox,#bAcc{display:none!important}}
