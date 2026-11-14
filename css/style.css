@@ -182,3 +182,30 @@ footer .divider{display:none}
 @media print{header.top,.btnrow,footer,aside.toc,.tools,.tip,.ov{display:none!important}body{background:#fff;color:#000;font-size:11.5pt}main{max-width:none;padding:0;animation:none}.rv,.rv *{opacity:1!important;transform:none!important}.hero{display:none}
  textarea{min-height:60mm;border:1px solid #888;background:#fff;color:#000}.kunci{display:none}.pemantik,.callout,.sumber,.card,figure,.cek,details{break-inside:avoid}a{color:#000;text-decoration:none}h2{break-after:avoid}.ulay{display:block}}
 @page{size:A4;margin:16mm}
+/* ===== v3: lebih tenang dan formal ===== */
+nav.units{scroll-snap-type:none}nav.units a{scroll-snap-align:none}nav.units a.done::before{display:none}nav.units a.done{font-weight:600}
+.logo{outline:0;transition:none}.brand:hover .logo{transform:none}
+.hero::before,.hero::after,footer::before{display:none}
+.hero{padding:clamp(28px,5vw,60px);border-radius:2px;border-left:0;border-right:0;background:none;border-top:2px solid var(--red)}
+.hero>div{padding-top:0}
+.stats{background:none;border-radius:0;border-left:0;border-right:0}
+.tahap div::before,.card::before,.peta a::before{display:none}
+.tahap div,.card,.peta a,figure,.sumber,.cek,.pemantik,.bt div{border-radius:2px}
+.seal{border:0;padding:0;color:var(--gold-t);font-size:.86rem}
+.peta .n i{border:0;padding:0;font-size:.86rem;color:var(--gold-t)}
+.pill{border:0;padding:0;margin-left:10px;color:var(--muted)}
+.toc button.seen span:first-child::after{display:none}.toc button.seen span:first-child{opacity:.55}
+.rv h2::after,.rv.in h2::after{width:48px;transition:none}
+/* animasi: satu pola saja, fade + geser kecil */
+.rv{transform:translateY(8px);transition:opacity .5s ease,transform .5s ease}
+.peta.rv>*,.tahap.rv>*,.rv .cards>*,.rv .gal>*,.rv .banding>*,.rv .bt>*{transform:translateY(8px);transition:opacity .45s ease,transform .45s ease,border-color .2s,box-shadow .2s}
+:is(.peta,.tahap,.cards,.gal,.banding,.bt)>:nth-child(n+2){transition-delay:.05s,.05s,0s,0s}:is(.peta,.cards,.gal)>:nth-child(n+4){transition-delay:.1s,.1s,0s,0s}
+.peta a:hover,.card:hover{transform:none!important;border-color:var(--red);box-shadow:none}
+figure:hover img{transform:none}
+@keyframes enter{from{opacity:0}to{opacity:1}}
+@keyframes up{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+.hero h1{animation-duration:.6s}.hero .sub,.hero .meta,.hero .acts,.stats{animation-duration:.6s}
+/* lini masa: titik awal tidak terpotong */
+.tl{padding:30px 10px 12px;margin:0 -10px 1.5rem}.tl::before{left:10px;width:max(calc(100% - 20px),1050px)}
+.tl a::before{left:2px;top:2px}.tl a{padding-left:0}.tl .y,.tl .t{padding-left:2px}
+.tl::before{top:37px}
