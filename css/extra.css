@@ -315,12 +315,12 @@ button.lnk:hover{background:none;color:var(--red);box-shadow:none;transform:none
  .msearch:active svg{transform:scale(1.18) rotate(-10deg);color:var(--red)}
  .find{min-height:48px;border-radius:12px;padding-left:44px;background:var(--surface) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23888' stroke-width='1.8' stroke-linecap='round'%3E%3Ccircle cx='11' cy='11' r='6.5'/%3E%3Cpath d='M16 16l5 5'/%3E%3C/svg%3E") no-repeat 14px center/19px;transition:border-color .25s,box-shadow .3s,background-position .3s var(--ease)}
  .find:focus{background-position:16px center;box-shadow:var(--ring)}
- .ov.srch{padding:0;bottom:0;background:rgba(0,0,0,.45);-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px)}
+ .ov.srch{padding:0;bottom:0;background:rgba(0,0,0,.45)}
  .ov.srch .box{max-width:none;max-height:80%;overflow:auto;border-radius:0 0 20px 20px;padding:calc(env(safe-area-inset-top,0px) + 12px) 14px 14px;animation:srchin .42s cubic-bezier(.32,.72,0,1)}
  .ov.srch .box .find{padding-left:44px}
  .ov.srch .res a{animation:fadein .2s ease}
  /* dasbor guru */
- .kpis{display:flex;overflow-x:auto;scroll-snap-type:x mandatory;gap:10px;margin:0 calc(-1*var(--gut));padding:0 var(--gut) 4px;scrollbar-width:none}
+ .kpis{display:flex;overflow-x:auto;scroll-snap-type:x mandatory;scroll-padding-inline:var(--gut);gap:10px;margin:0 calc(-1*var(--gut));padding:0 var(--gut) 4px;scrollbar-width:none}
  .kpis::-webkit-scrollbar{display:none}
  .kpi{flex:0 0 140px;scroll-snap-align:start}
  .ub{grid-template-columns:48px minmax(0,1fr) 40px;grid-template-areas:"u t e";margin-bottom:10px}
