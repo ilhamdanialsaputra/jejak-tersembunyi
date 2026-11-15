@@ -16,8 +16,7 @@ const Sess=(()=>{
     gate(h){
       if(!user&&!api.guest())return h==='masuk'?null:'masuk';
       if(user&&h==='masuk')return user.role==='guru'?'dasbor':'beranda';
-      if(h==='dasbor'&&(!user||user.role!=='guru'))return'beranda';
-      if(h==='panduan-guru'&&user&&user.role==='murid')return'beranda';
+      if((h==='dasbor'||h==='panduan-guru'||h==='periksa')&&(!user||user.role!=='guru'))return'beranda';
       return null},
     /* simpan progres murid (ditunda 0,7 detik agar tidak menulis tiap ketikan) */
     push(){if(!api.syncs())return;clearTimeout(timer);
@@ -35,7 +34,7 @@ const Sess=(()=>{
     async out(){await Store.auth.logout();user=null;fb={};sessionStorage.removeItem(G);setState(ld(KEY,{}));closeOv();api.go('masuk')},
     guestGo(){sessionStorage.setItem(G,'1');api.go('beranda')},
     paint(){const b=document.getElementById('bAcc');if(!b)return;
-      document.body.classList.toggle('is-auth',(location.hash||'').slice(1)==='masuk');
+      document.body.classList.toggle('is-auth',(location.hash||'').slice(1)==='masuk');document.body.dataset.role=user?user.role:'tamu';
       b.classList.toggle('on',!!user);b.setAttribute('aria-label',user?'Akun: '+user.nama:'Masuk');
       b.innerHTML=user?PFP:'<svg viewBox="0 0 24 24"><circle cx="12" cy="8.5" r="3.6"/><path d="M5 20c.8-3.6 3.7-5.4 7-5.4s6.2 1.8 7 5.4"/></svg>'},
     async panel(){
