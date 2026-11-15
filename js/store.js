@@ -1,83 +1,139 @@
 /* ============================================================
-   STORE — satu-satunya pintu ke data (akun, kelas, progres).
-   Sekarang: adapter LOKAL (localStorage) untuk demo/prototipe.
-   Nanti: ganti isi adapter ini dengan Firebase; UI tidak perlu diubah.
-   Semua fungsi async supaya bentuknya sama dengan Firebase.
-
-   Skema (siap dipindah ke Firestore):
-     users/{uid}      {uid, role:'murid'|'guru', nama, nis?, email?, kelas}
+   STORE — adapter FIREBASE (Auth + Firestore), antarmuka sama
+   dengan adapter lokal. UI (auth.js, app.js) tidak perlu diubah.
+   Butuh di index.html, SEBELUM store.js:
+     firebase-app-compat.js, firebase-auth-compat.js, firebase-firestore-compat.js
+   Skema Firestore:
+     users/{uid}      {uid, role, nama, nis?, email?, kelas}
      classes/{kode}   {kode, nama, guruUid, dibuat}
      progress/{uid}   {done, notes, seen, updated, nama, nis, kelas}
-   Login murid memakai NIS; di Firebase NIS dipetakan ke email semu
-   "<nis>@murid.jejak.id" (Firebase Auth hanya mengenal email+sandi).
+   NIS murid dipetakan ke email semu "<nis>@murid.jejak.id".
    ============================================================ */
-const Store=(()=>{
-  const DB='jejak-db-v1',SES='jejak-session-v1',AL='ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
-  const empty=()=>({users:{},classes:{},progress:{}});
-  const rd=()=>{try{return JSON.parse(localStorage.getItem(DB))||empty()}catch(e){return empty()}};
-  const wr=d=>localStorage.setItem(DB,JSON.stringify(d));
-  const rid=()=>'u'+Math.random().toString(36).slice(2,10)+Date.now().toString(36).slice(-4);
-  const fail=m=>{throw new Error(m)};
-  const hash=async s=>{
-    s='jejak|'+s;
-    if(window.crypto&&crypto.subtle){const b=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(s));return[...new Uint8Array(b)].map(x=>x.toString(16).padStart(2,'0')).join('')}
-    let h=5381;for(const c of s)h=((h<<5)+h+c.charCodeAt(0))>>>0;return'x'+h};
-  const newCode=d=>{let k;do{k=Array.from({length:5},()=>AL[Math.floor(Math.random()*AL.length)]).join('')}while(d.classes[k]);return k};
-  const pub=u=>u&&{uid:u.uid,role:u.role,nama:u.nama,nis:u.nis,email:u.email,kelas:u.kelas};
-  const open=(d,u)=>{localStorage.setItem(SES,u.uid);return pub(u)};
 
-  return{
-    mode:'lokal',   /* 'lokal' | 'firebase' */
-    auth:{
-      async current(){const d=rd(),id=localStorage.getItem(SES);return id&&d.users[id]?pub(d.users[id]):null},
-      async registerStudent({nama,nis,kode,password}){
-        const d=rd();nama=(nama||'').trim();nis=(nis||'').trim();kode=(kode||'').trim().toUpperCase();
-        if(!nama||!nis||!kode||!password)fail('Lengkapi semua kolom.');
-        if(!/^\d{4,20}$/.test(nis))fail('NIS berisi angka saja (4–20 digit).');
-        if(password.length<6)fail('Kata sandi minimal 6 karakter.');
-        if(!d.classes[kode])fail('Kode kelas tidak ditemukan. Minta kode ke gurumu.');
-        if(Object.values(d.users).some(u=>u.nis===nis))fail('NIS ini sudah terdaftar. Silakan masuk.');
-        const u={uid:rid(),role:'murid',nama,nis,kelas:kode,pw:await hash(password)};
-        d.users[u.uid]=u;wr(d);return open(d,u)},
-      async registerTeacher({nama,email,password,kelas}){
-        const d=rd();nama=(nama||'').trim();email=(email||'').trim().toLowerCase();kelas=(kelas||'').trim();
-        if(!nama||!email||!kelas||!password)fail('Lengkapi semua kolom.');
-        if(!/^\S+@\S+\.\S+$/.test(email))fail('Format email belum benar.');
-        if(password.length<6)fail('Kata sandi minimal 6 karakter.');
-        if(Object.values(d.users).some(u=>u.email===email))fail('Email ini sudah terdaftar. Silakan masuk.');
-        const kode=newCode(d),u={uid:rid(),role:'guru',nama,email,kelas:kode,pw:await hash(password)};
-        d.users[u.uid]=u;d.classes[kode]={kode,nama:kelas,guruUid:u.uid,dibuat:Date.now()};wr(d);return open(d,u)},
-      async login({id,password}){
-        const d=rd();id=(id||'').trim().toLowerCase();
-        const u=Object.values(d.users).find(x=>x.email===id||x.nis===id);
-        if(!u||u.pw!==await hash(password||''))fail('NIS/email atau kata sandi salah.');
-        return open(d,u)},
-      async logout(){localStorage.removeItem(SES)}
+/* TEMPEL firebaseConfig dari Firebase Console di sini */
+const FIREBASE_CONFIG = {
+  apiKey: "AIzaSyAtNAA1kSm7p2qyMGcx5pJs-BUEeUuMn98",
+  authDomain: "jejak-tersembunyi.firebaseapp.com",
+  projectId: "jejak-tersembunyi",
+  storageBucket: "jejak-tersembunyi.firebasestorage.app",
+  messagingSenderId: "899290427392",
+  appId: "1:899290427392:web:b89ef0b06cb78274a2a8e5"
+};
+
+const Store = (() => {
+  firebase.initializeApp(FIREBASE_CONFIG);
+  const A = firebase.auth(), D = firebase.firestore();
+  const AL = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789', DOM = '@murid.jejak.id';
+  const fail = m => { throw new Error(m); };
+  const pub = u => u && { uid: u.uid, role: u.role, nama: u.nama, nis: u.nis, email: u.email, kelas: u.kelas };
+
+  const PESAN = {
+    'auth/email-already-in-use': 'NIS/email ini sudah terdaftar. Silakan masuk.',
+    'auth/invalid-credential': 'NIS/email atau kata sandi salah.',
+    'auth/invalid-login-credentials': 'NIS/email atau kata sandi salah.',
+    'auth/wrong-password': 'NIS/email atau kata sandi salah.',
+    'auth/user-not-found': 'NIS/email atau kata sandi salah.',
+    'auth/invalid-email': 'Format email/NIS belum benar.',
+    'auth/weak-password': 'Kata sandi minimal 6 karakter.',
+    'auth/network-request-failed': 'Koneksi bermasalah. Periksa internetmu.',
+    'auth/too-many-requests': 'Terlalu banyak percobaan. Coba lagi beberapa menit lagi.',
+    'permission-denied': 'Akses ditolak oleh server.',
+    'unavailable': 'Server tidak terjangkau. Periksa koneksi.'
+  };
+  const wrap = async f => {
+    try { return await f(); }
+    catch (e) { throw new Error(e && e.code ? (PESAN[e.code] || PESAN[e.code.replace('firestore/', '')] || e.message) : (e.message || 'Terjadi kesalahan.')); }
+  };
+
+  /* tunggu status login pertama (Firebase memulihkan sesi secara asinkron) */
+  const ready = new Promise(res => { const un = A.onAuthStateChanged(u => { un(); res(u); }); });
+  const profile = async uid => { const s = await D.collection('users').doc(uid).get(); return s.exists ? pub(s.data()) : null; };
+  const newCode = async () => {
+    for (let i = 0; i < 12; i++) {
+      const k = Array.from({ length: 5 }, () => AL[Math.floor(Math.random() * AL.length)]).join('');
+      if (!(await D.collection('classes').doc(k).get()).exists) return k;
+    }
+    fail('Gagal membuat kode kelas. Coba lagi.');
+  };
+
+  return {
+    mode: 'firebase',
+    auth: {
+      async current() {
+        await ready;
+        const u = A.currentUser;
+        return u ? profile(u.uid) : null;
+      },
+      registerStudent: ({ nama, nis, kode, password }) => wrap(async () => {
+        nama = (nama || '').trim(); nis = (nis || '').trim(); kode = (kode || '').trim().toUpperCase();
+        if (!nama || !nis || !kode || !password) fail('Lengkapi semua kolom.');
+        if (!/^\d{4,20}$/.test(nis)) fail('NIS berisi angka saja (4–20 digit).');
+        if (password.length < 6) fail('Kata sandi minimal 6 karakter.');
+        if (!(await D.collection('classes').doc(kode).get()).exists) fail('Kode kelas tidak ditemukan. Minta kode ke gurumu.');
+        const cred = await A.createUserWithEmailAndPassword(nis + DOM, password);
+        const u = { uid: cred.user.uid, role: 'murid', nama, nis, kelas: kode };
+        try { await D.collection('users').doc(u.uid).set(u); }
+        catch (e) { await cred.user.delete().catch(() => {}); throw e; }
+        return pub(u);
+      }),
+      registerTeacher: ({ nama, email, password, kelas }) => wrap(async () => {
+        nama = (nama || '').trim(); email = (email || '').trim().toLowerCase(); kelas = (kelas || '').trim();
+        if (!nama || !email || !kelas || !password) fail('Lengkapi semua kolom.');
+        if (!/^\S+@\S+\.\S+$/.test(email)) fail('Format email belum benar.');
+        if (password.length < 6) fail('Kata sandi minimal 6 karakter.');
+        const cred = await A.createUserWithEmailAndPassword(email, password);
+        try {
+          const kode = await newCode();
+          const u = { uid: cred.user.uid, role: 'guru', nama, email, kelas: kode };
+          const b = D.batch();
+          b.set(D.collection('users').doc(u.uid), u);
+          b.set(D.collection('classes').doc(kode), { kode, nama: kelas, guruUid: u.uid, dibuat: Date.now() });
+          await b.commit();
+          return pub(u);
+        } catch (e) { await cred.user.delete().catch(() => {}); throw e; }
+      }),
+      login: ({ id, password }) => wrap(async () => {
+        id = (id || '').trim().toLowerCase();
+        if (!id || !password) fail('Isi NIS/email dan kata sandi.');
+        const cred = await A.signInWithEmailAndPassword(id.includes('@') ? id : id + DOM, password);
+        const p = await profile(cred.user.uid);
+        if (!p) { await A.signOut(); fail('Profil akun tidak ditemukan.'); }
+        return p;
+      }),
+      async logout() { await A.signOut(); }
     },
-    progress:{
-      async load(uid){const p=rd().progress[uid];return p?{done:p.done||{},notes:p.notes||{},seen:p.seen||{}}:{done:{},notes:{},seen:{}}},
-      async save(uid,s){const d=rd(),u=d.users[uid];if(!u)return;
-        d.progress[uid]={done:s.done,notes:s.notes,seen:s.seen,updated:Date.now(),nama:u.nama,nis:u.nis,kelas:u.kelas};wr(d)}
+    progress: {
+      load: uid => wrap(async () => {
+        const s = await D.collection('progress').doc(uid).get();
+        const p = s.exists ? s.data() : {};
+        return { done: p.done || {}, notes: p.notes || {}, seen: p.seen || {} };
+      }),
+      save: (uid, s) => wrap(async () => {
+        const u = await profile(uid);
+        if (!u) return;
+        await D.collection('progress').doc(uid).set({
+          done: s.done, notes: s.notes, seen: s.seen, updated: Date.now(),
+          nama: u.nama, nis: u.nis || '', kelas: u.kelas
+        });
+      })
     },
-    teacher:{
-      async classInfo(kode){return rd().classes[kode]||null},
-      /* daftar murid sekelas + progresnya. Firestore: where('kelas','==',kode) pada progress/ & users/ */
-      async roster(kode){const d=rd();return Object.values(d.users).filter(u=>u.role==='murid'&&u.kelas===kode)
-        .map(u=>({user:pub(u),progress:d.progress[u.uid]||{done:{},notes:{},seen:{},updated:0}}))},
-      /* hanya mode lokal: isi kelas dengan murid contoh supaya dasbor bisa dilihat */
-      async seedDemo(kode,units){
-        const d=rd(),N=['Aisyah Putri','Bagas Pratama','Citra Lestari','Dimas Anggara','Eka Wulandari','Farhan Maulana','Gita Safitri','Hafiz Ramadhan','Indah Permata','Joko Santoso','Kirana Dewi','Luthfi Hakim','Maya Salsabila','Naufal Rizky'];
-        const L=['Menurutku mereka tinggal berkelompok karena aturan VOC, tetapi lama-lama menjadi pusat ekonomi.','Sumber A menekankan sisi politik, sumber B lebih ke ekonomi. Keduanya perlu dibandingkan.','Pelajaran penting: sejarah tidak hanya diisi tokoh yang sering disebut di buku.','Aku baru tahu peran mereka sebesar ini dalam perjuangan.'];
-        N.forEach((nama,i)=>{const uid='demo'+i,nis=String(2026001+i);
-          d.users[uid]={uid,role:'murid',nama,nis,kelas:kode,pw:'-'};
-          const lvl=i<3?units.length:i<9?1+Math.floor(Math.random()*units.length):Math.floor(Math.random()*3),p={done:{},notes:{},seen:{}};
-          units.forEach((u,k)=>{
-            if(k<lvl){p.done[u.id]=true;p.seen[u.id]={1:1,2:1,3:1,4:1,5:1,6:1,7:1,8:1};
-              p.notes[u.id]={pemantik:L[(i+k)%4],q0:L[(i+k+1)%4],refleksi:L[(i+k+2)%4],c0:L[(i+k+3)%4]}}
-            else if(k===lvl&&i%2){p.seen[u.id]={1:1,2:1,3:1,4:1};p.notes[u.id]={pemantik:L[i%4]}}});
-          p.updated=Date.now()-Math.floor(Math.random()*(i<10?4:14))*864e5-Math.random()*36e5*5;
-          p.nama=nama;p.nis=nis;p.kelas=kode;d.progress[uid]=p});wr(d)},
-      async clearDemo(){const d=rd();Object.keys(d.users).filter(k=>k.startsWith('demo')).forEach(k=>{delete d.users[k];delete d.progress[k]});wr(d)}
+    teacher: {
+      classInfo: kode => wrap(async () => {
+        const s = await D.collection('classes').doc(kode).get();
+        return s.exists ? s.data() : null;
+      }),
+      roster: kode => wrap(async () => {
+        const [us, ps] = await Promise.all([
+          D.collection('users').where('kelas', '==', kode).where('role', '==', 'murid').get(),
+          D.collection('progress').where('kelas', '==', kode).get()
+        ]);
+        const P = {}; ps.forEach(d => P[d.id] = d.data());
+        return us.docs.map(d => {
+          const u = pub(d.data());
+          return { user: u, progress: P[u.uid] || { done: {}, notes: {}, seen: {}, updated: 0 } };
+        });
+      }),
+      async seedDemo() {}, async clearDemo() {}   /* hanya untuk mode lokal */
     }
   };
 })();
