@@ -49,35 +49,40 @@ document.addEventListener('click',e=>{const p=$('#setPop');if(!p.classList.conta
 const ov=$('#ov');const closeOv=()=>{ov.classList.add('hidden');ov.className='ov hidden';ov.innerHTML='';ov.removeAttribute('style')};
 /* saat overlay/lembar aktif, halaman di belakangnya dikunci (mobile) */
 new MutationObserver(()=>document.documentElement.classList.toggle('ovlock',!ov.classList.contains('hidden'))).observe(ov,{attributes:true,attributeFilter:['class']});
-ov.addEventListener('click',e=>{if(e.target===ov||ov.classList.contains('lb'))closeOv()});
+ov.addEventListener('click',e=>{if(e.target===ov||ov.classList.contains('lb')){ov.classList.contains('sh')?closeSheet():closeOv()}});
 function lightbox(im){const f=im.closest('figure');ov.className='ov lb';ov.innerHTML=`<div class="box"><img src="${esc(im.src)}" alt="${esc(im.alt)}"><p style="margin-top:10px;font-size:.9rem">${f?esc($('figcaption b',f).textContent):esc(im.alt)}</p></div>`}
 function index(){const r=[];UNITS.forEach(u=>{r.push({t:'Unit '+u.id,a:u.judul,s:u.periode,h:'#unit-'+u.id,k:[u.judul,...u.sehari,...u.peristiwa].join(' ')});u.tokoh.forEach(x=>{if(!x.nama.startsWith('['))r.push({t:'Tokoh',a:x.nama,s:'Unit '+u.id+' · '+x.tindakan,h:'#unit-'+u.id,k:x.nama+' '+x.tindakan})})});GLOSARIUM.forEach(g=>r.push({t:'Istilah',a:g[0],s:g[1],h:'#glosarium',k:g[0]+' '+g[1]}));return r}
 function openSearch(){ov.className='ov';ov.innerHTML=`<div class="box"><input class="find" id="q" placeholder="Cari unit, tokoh, atau istilah" style="max-width:none;margin:0 0 8px" aria-label="Cari"><div class="res" id="res"></div></div>`;const I=index(),q=$('#q'),res=$('#res');
   const go=()=>{const s=q.value.trim().toLowerCase();const m=s?I.filter(x=>x.k.toLowerCase().includes(s)).slice(0,12):[];res.innerHTML=m.length?m.map(x=>`<a href="${x.h}"><em>${esc(x.t)}</em>${esc(x.a)}<small>${esc(x.s)}</small></a>`).join(''):`<p class="meta" style="padding:8px">${s?'Tidak ada hasil.':'Ketik untuk mencari.'}</p>`;$$('a',res).forEach(a=>a.onclick=closeOv)};q.oninput=go;go();q.focus()}
 $('#bSearch').onclick=openSearch;
-document.addEventListener('keydown',e=>{if(e.key==='Escape')closeOv();if(e.key==='/'&&!/INPUT|TEXTAREA/.test(document.activeElement.tagName)){e.preventDefault();openSearch()}});
+document.addEventListener('keydown',e=>{if(e.key==='Escape')ov.classList.contains('sh')?closeSheet():closeOv();if(e.key==='/'&&!/INPUT|TEXTAREA/.test(document.activeElement.tagName)){e.preventDefault();openSearch()}});
 
 /* ---------- navigasi ---------- */
 const MI={home:'<path d="M4 11l8-7 8 7v9a1 1 0 0 1-1 1h-4v-6H9v6H5a1 1 0 0 1-1-1z"/>',unit:'<path d="M5 4h11a3 3 0 0 1 3 3v13H8a3 3 0 0 1-3-3z M5 17a3 3 0 0 1 3-3h11"/>',tokoh:'<circle cx="9" cy="8" r="3.2"/><path d="M3 20c.6-3.5 3-5.2 6-5.2s5.4 1.7 6 5.2 M16 5.2a3 3 0 0 1 0 5.6 M18 14.8c1.8.6 3 2.2 3.3 4.6"/>',glos:'<path d="M5 4h12a2 2 0 0 1 2 2v14H7a2 2 0 0 1-2-2z M9 8h6 M9 12h6"/>',more:'<circle cx="6" cy="12" r="1.3" fill="currentColor"/><circle cx="12" cy="12" r="1.3" fill="currentColor"/><circle cx="18" cy="12" r="1.3" fill="currentColor"/>'};
-function renderMnav(a){const m=$('#mnav');if(!m)return;const more=Sess.role()!=='murid',u=a.startsWith('unit-')?a.slice(5):'',sig=more?'5':'4',ic=k=>`<svg viewBox="0 0 24 24" aria-hidden="true">${MI[k]}</svg>`;
+function renderMnav(a){const m=$('#mnav');if(!m)return;const u=a.startsWith('unit-')?a.slice(5):'',ic=k=>`<svg viewBox="0 0 24 24" aria-hidden="true">${MI[k]}</svg>`;
   /* bilah dibuat sekali; selanjutnya hanya kelas aktif dan label yang diperbarui, supaya bilah tidak berkedip/bergeser */
-  if(m.dataset.sig!==sig){m.dataset.sig=sig;const A=(h,k,l)=>`<a href="#${h}" data-t="${h}">${ic(k)}<span class="lb">${l}</span></a>`;
-    m.innerHTML=A('beranda','home','Beranda')+`<button type="button" data-sh="unit" data-t="unit" aria-haspopup="dialog">${ic('unit')}<span class="lb">Unit</span></button>`+A('tokoh','tokoh','Tokoh')+A('glosarium','glos','Glosarium')+(more?`<button type="button" data-sh="more" data-t="more" aria-haspopup="dialog">${ic('more')}<span class="lb">Lainnya</span></button>`:'')}
-  $$('[data-t]',m).forEach(x=>{const t=x.dataset.t,on=t==='unit'?!!u:t==='more'?/^(panduan-guru|dasbor)$/.test(a):a===t;x.classList.toggle('on',on);if(on&&!x.dataset.sh)x.setAttribute('aria-current','page');else x.removeAttribute('aria-current')});
+  if(!m.dataset.built){m.dataset.built='1';const A=(h,k,l)=>`<a href="#${h}" data-t="${h}">${ic(k)}<span class="lb">${l}</span></a>`;
+    m.innerHTML=A('beranda','home','Beranda')+`<button type="button" data-sh="unit" data-t="unit" aria-haspopup="dialog">${ic('unit')}<span class="lb">Unit</span></button>`+A('tokoh','tokoh','Tokoh')+A('glosarium','glos','Glosarium')+A('lainnya','more','Lainnya')}
+  $$('[data-t]',m).forEach(x=>{const t=x.dataset.t,on=t==='unit'?!!u:t==='lainnya'?/^(lainnya|panduan-guru|dasbor)$/.test(a):a===t;x.classList.toggle('on',on);if(on&&!x.dataset.sh)x.setAttribute('aria-current','page');else x.removeAttribute('aria-current')});
   const lb=$('[data-t=unit] .lb',m);if(lb)lb.textContent=u?'Unit '+u:'Unit'}
-function sheet(title,rows){ov.removeAttribute('style');ov.className='ov sh';ov.innerHTML=`<div class="box sheet" role="dialog" aria-label="${esc(title)}"><div class="gh"><div class="grab"></div><h3>${esc(title)}</h3></div>${rows}</div>`;$$('a',ov).forEach(a=>a.onclick=closeOv);dragSheet()}
-/* tutup lembar dengan geser ke bawah pada gagang/judul (atau ketuk gagang) */
+/* ---- lembar bawah: naik mulus dari bawah layar, tanpa fade; ditutup dengan geser, ketuk latar, atau Esc ---- */
+function sheet(title,rows){ov.removeAttribute('style');delete ov.dataset.closing;ov.className='ov sh';ov.innerHTML=`<div class="box sheet" role="dialog" aria-label="${esc(title)}"><div class="gh"><div class="grab"></div><h3>${esc(title)}</h3></div>${rows}</div>`;$$('a',ov).forEach(a=>a.onclick=()=>closeSheet());dragSheet()}
+function closeSheet(){const box=$('.box.sheet',ov);if(!box||!ov.classList.contains('sh'))return closeOv();if(ov.dataset.closing)return;ov.dataset.closing='1';
+  box.style.animation='none';box.style.transition='transform .38s cubic-bezier(.32,.72,0,1)';ov.classList.remove('drag');
+  ov.style.setProperty('--bd','0');box.style.transform=`translate3d(0,${box.offsetHeight}px,0)`;
+  setTimeout(()=>{delete ov.dataset.closing;closeOv()},360)}
 function dragSheet(){const box=$('.box.sheet',ov),gh=$('.gh',box);if(!box||!gh)return;let y0=0,dy=0,t0=0,on=false;
-  const set=v=>{box.style.transform=v?`translateY(${v}px)`:'';ov.style.setProperty('--bd',String(Math.max(0,1-v/Math.max(1,box.offsetHeight))))};
-  const shut=()=>{box.style.transition='transform .24s var(--ease)';ov.style.transition='background-color .24s ease';set(box.offsetHeight);setTimeout(closeOv,230)};
-  gh.addEventListener('pointerdown',e=>{if(e.pointerType==='mouse'&&e.button)return;on=true;y0=e.clientY;dy=0;t0=performance.now();box.style.animation='none';box.style.transition='none';ov.style.transition='none';try{gh.setPointerCapture(e.pointerId)}catch(x){}});
+  const set=v=>{box.style.transform=v?`translate3d(0,${v}px,0)`:'';ov.style.setProperty('--bd',String(Math.max(0,1-v/Math.max(1,box.offsetHeight))))};
+  gh.addEventListener('pointerdown',e=>{if(ov.dataset.closing||(e.pointerType==='mouse'&&e.button))return;on=true;y0=e.clientY;dy=0;t0=performance.now();box.style.animation='none';box.style.transition='none';ov.classList.add('drag');try{gh.setPointerCapture(e.pointerId)}catch(x){}});
   gh.addEventListener('pointermove',e=>{if(!on)return;dy=Math.max(0,e.clientY-y0);set(dy)});
   const end=()=>{if(!on)return;on=false;const dt=Math.max(1,performance.now()-t0),v=dy/dt;
-    if(dy>90||v>.6||(dy<4&&dt<250))shut();else{box.style.transition='transform .24s var(--ease)';ov.style.transition='background-color .24s ease';set(0)}};
+    if(dy>90||v>.6||(dy<4&&dt<250))closeSheet();else{ov.classList.remove('drag');box.style.transition='transform .38s cubic-bezier(.32,.72,0,1)';set(0)}};
   gh.addEventListener('pointerup',end);gh.addEventListener('pointercancel',end)}
-$('#mnav').addEventListener('click',e=>{const b=e.target.closest('[data-sh]');if(!b)return;const cur=location.hash.slice(1);
-  if(b.dataset.sh==='unit')sheet('Pilih unit',UNITS.map(u=>`<a class="si ${cur==='unit-'+u.id?'cur':''}" href="#unit-${u.id}"><i>${u.id}</i><span><b>${esc(u.judul.split(':')[0])}</b><small>${esc(u.periode)} · ${esc(u.waktu)}</small></span>${state.done[u.id]?'<em>Selesai</em>':''}</a>`).join(''));
-  else sheet('Lainnya',`<a class="si" href="#panduan-guru"><span><b>Panduan guru</b><small>Skenario, rubrik, episode sensitif</small></span></a>`+(Sess.role()==='guru'?`<a class="si" href="#dasbor"><span><b>Dasbor</b><small>Pantau progres kelas</small></span></a>`:''))});
+$('#mnav').addEventListener('click',e=>{const b=e.target.closest('[data-sh]');if(!b)return;
+  if(ov.classList.contains('sh')&&!ov.classList.contains('hidden')){closeSheet();return}
+  const cur=location.hash.slice(1);
+  sheet('Pilih unit',UNITS.map(u=>`<a class="si ${cur==='unit-'+u.id?'cur':''}" href="#unit-${u.id}"><i>${u.id}</i><span><b>${esc(u.judul.split(':')[0])}</b><small>${esc(u.periode)} · ${esc(u.waktu)}</small></span>${state.done[u.id]?'<em>Selesai</em>':''}</a>`).join(''))});
+document.addEventListener('click',e=>{if(e.target.closest('#mSearch'))openSearch()});
 document.addEventListener('focusin',e=>{if(/^(INPUT|TEXTAREA|SELECT)$/.test(e.target.tagName))document.body.classList.add('typing')});
 document.addEventListener('focusout',()=>document.body.classList.remove('typing'));
 function renderNav(a){const nv0=$('#nav'),sl0=nv0.scrollLeft;nv0.innerHTML=[['beranda','Beranda'],...UNITS.map(u=>['unit-'+u.id,String(u.id),u]),['glosarium','Glosarium'],['tokoh','Tokoh'],...(Sess.role()!=='murid'?[['panduan-guru','Panduan guru']]:[]),...(Sess.role()==='guru'?[['dasbor','Dasbor']]:[])].map(([h,l,u])=>`<a href="#${h}" class="${a===h?'active':''} ${u&&state.done[u.id]?'done':''}" ${u?`title="${esc(u.judul)}" aria-label="Unit ${u.id}"`:''} ${a===h?'aria-current="page"':''}>${u?'Unit '+l:l}</a>`).join('');nv0.scrollLeft=sl0;const act=$('#nav a.active');if(act)ctr(act);fades();Fx.nav();renderMnav(a);Sess.paint()}
@@ -92,6 +97,7 @@ function viewHome(){renderNav('beranda');
   const selesai=Object.keys(state.done).filter(k=>state.done[k]).length;
   const nT=UNITS.reduce((a,u)=>a+u.tokoh.filter(t=>!t.nama.startsWith('[')).length,0),nG=UNITS.reduce((a,u)=>a+u.galeri.length,0);
   app.innerHTML=`
+  <button type="button" class="msearch" id="mSearch"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="M16 16l5 5"/></svg>Cari unit, tokoh, atau istilah</button>
   <section class="hero"><div>
    <p class="meta">E-modul suplemen Sejarah kelas XI (Fase F) · 6 unit inti + 1 unit lanjutan · prototipe</p>
    <h1>Jejak yang Tersembunyi</h1><p class="sub">Peran Etnis Tionghoa dalam Sejarah Indonesia</p>
@@ -200,8 +206,18 @@ let curH=null;
 function dispatch(h){closeOv();Sess.paint();
   if(h==='masuk')return viewMasuk();
   if(h===''||h==='beranda')return viewHome();if(h.startsWith('unit-'))return viewUnit(parseInt(h.slice(5),10));
-  if(h==='glosarium')return viewGlosarium();if(h==='tokoh')return viewTokoh();if(h==='panduan-guru')return viewGuru();
+  if(h==='lainnya')return viewLainnya();if(h==='glosarium')return viewGlosarium();if(h==='tokoh')return viewTokoh();if(h==='panduan-guru')return viewGuru();
   if(h==='periksa')return viewPeriksa();if(h==='dasbor')return viewDasbor();viewHome()}
+function viewLainnya(){renderNav('lainnya');const u=Sess.user(),role=Sess.role();
+  const acct=u?`<div class="lcard"><div class="av pf">${PFP}</div><div class="lwho"><b>${esc(u.nama)}</b><small>${role==='guru'?'Guru · '+esc(u.email):'Murid · NIS '+esc(u.nis)}</small>${u.kelas?`<small>Kode kelas ${esc(u.kelas)}</small>`:''}</div><button class="ghost" id="lOut">Keluar</button></div>`
+   :`<div class="lcard"><div class="av pf">${PFP}</div><div class="lwho"><b>Tamu</b><small>Progres hanya tersimpan di peramban ini.</small></div><button id="lIn">Masuk</button></div>`;
+  const guru=role!=='murid'?`<h2 class="lh">Untuk guru</h2><div class="lgrp"><a class="si" href="#panduan-guru"><span><b>Panduan guru</b><small>Skenario, rubrik, episode sensitif</small></span></a>${role==='guru'?`<a class="si" href="#dasbor"><span><b>Dasbor</b><small>Pantau progres kelas</small></span></a>`:''}</div>`:'';
+  app.innerHTML=`<h1>Lainnya</h1><button type="button" class="msearch lsearch" id="mSearch"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="M16 16l5 5"/></svg>Cari unit, tokoh, atau istilah</button>
+  <h2 class="lh">Akun</h2>${acct}${guru}<h2 class="lh">Tampilan</h2><div class="lgrp"><div class="pop lpop" id="lPref"></div></div>`;
+  const lo=$('#lOut'),li=$('#lIn');if(lo)lo.onclick=Sess.out;if(li)li.onclick=()=>Sess.go('masuk');
+  const pr=()=>{const p=$('#lPref');const seg=(k,o)=>`<div class="seg">${o.map(([v,l])=>`<button data-k="${k}" data-v="${v}" aria-pressed="${String(prefs[k])===String(v)}">${l}</button>`).join('')}</div>`;
+    p.innerHTML=`<h4>Tema</h4>${seg('tema',[['auto','Otomatis'],['light','Terang'],['dark','Gelap']])}<h4>Ukuran teks</h4>${seg('ukuran',[[90,'Kecil'],[100,'Normal'],[115,'Besar']])}<h4>Mode proyektor (teks besar)</h4>${seg('proyektor',[[false,'Mati'],[true,'Hidup']])}`;
+    $$('button[data-k]',p).forEach(b=>b.onclick=()=>{let v=b.dataset.v;prefs[b.dataset.k]=v==='true'?true:v==='false'?false:(isNaN(v)?v:+v);applyPrefs();pr()})};pr();after(false)}
 function route(){const h=(location.hash||'#beranda').slice(1),g=Sess.gate(h);
   if(g){location.hash='#'+g;return}
   const from=curH;curH=h;
