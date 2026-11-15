@@ -16,6 +16,8 @@ const Fx=(()=>{
   const EASE='cubic-bezier(.76,0,.18,1)',OUT='cubic-bezier(.2,.7,.2,1)';
   let el=null,busy=false,phase='',next=null,pi=null;
   const wait=ms=>new Promise(r=>setTimeout(r,ms));
+  /* cegah gulir sentuh selama transisi (pengganti overflow:hidden pada root yang mengubah ukuran viewport) */
+  const stopT=e=>{if(e.cancelable)e.preventDefault()};
   /* tunggu n frame (dengan cadangan timer supaya tidak menggantung di tab latar) */
   const frames=n=>Promise.race([new Promise(r=>{const t=()=>--n>0?requestAnimationFrame(t):r();requestAnimationFrame(t)}),wait(70)]);
   const build=()=>{el=document.createElement('div');el.className='curtain';el.setAttribute('aria-hidden','true');
@@ -37,6 +39,7 @@ const Fx=(()=>{
     next=fn;
     if(busy){if(phase==='reveal'){const f=next;next=null;f()}return}
     busy=true;phase='cover';
+    document.addEventListener('touchmove',stopT,{passive:false});
     const app=document.getElementById('app');
     try{
       if(!el)build();
@@ -59,6 +62,7 @@ const Fx=(()=>{
       app.animate([{opacity:0,transform:`translateX(${d*T.x}px)`},{opacity:1,transform:'none'}],{duration:M?520:760,delay:M?90:140,easing:OUT,fill:'backwards'});
       await Promise.all([...P].reverse().map((n,i)=>run(n,[{transform:full},{transform:to}],{duration:T.r,delay:i*T.s})));
     }finally{
+      document.removeEventListener('touchmove',stopT);
       app.style.willChange='';
       if(el){el.getAnimations({subtree:true}).forEach(x=>x.cancel());el.classList.remove('on')}
       document.documentElement.classList.remove('fx');
