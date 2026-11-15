@@ -46,7 +46,9 @@ document.addEventListener('click',e=>{const p=$('#setPop');if(!p.classList.conta
   const im=e.target.closest('img');if(im&&im.closest('.media,figure')&&!im.closest('.potret'))lightbox(im)});
 
 /* ---------- overlay: pencarian dan lightbox ---------- */
-const ov=$('#ov');const closeOv=()=>{ov.classList.add('hidden');ov.className='ov hidden';ov.innerHTML=''};
+const ov=$('#ov');const closeOv=()=>{ov.classList.add('hidden');ov.className='ov hidden';ov.innerHTML='';ov.removeAttribute('style')};
+/* saat overlay/lembar aktif, halaman di belakangnya dikunci (mobile) */
+new MutationObserver(()=>document.documentElement.classList.toggle('ovlock',!ov.classList.contains('hidden'))).observe(ov,{attributes:true,attributeFilter:['class']});
 ov.addEventListener('click',e=>{if(e.target===ov||ov.classList.contains('lb'))closeOv()});
 function lightbox(im){const f=im.closest('figure');ov.className='ov lb';ov.innerHTML=`<div class="box"><img src="${esc(im.src)}" alt="${esc(im.alt)}"><p style="margin-top:10px;font-size:.9rem">${f?esc($('figcaption b',f).textContent):esc(im.alt)}</p></div>`}
 function index(){const r=[];UNITS.forEach(u=>{r.push({t:'Unit '+u.id,a:u.judul,s:u.periode,h:'#unit-'+u.id,k:[u.judul,...u.sehari,...u.peristiwa].join(' ')});u.tokoh.forEach(x=>{if(!x.nama.startsWith('['))r.push({t:'Tokoh',a:x.nama,s:'Unit '+u.id+' · '+x.tindakan,h:'#unit-'+u.id,k:x.nama+' '+x.tindakan})})});GLOSARIUM.forEach(g=>r.push({t:'Istilah',a:g[0],s:g[1],h:'#glosarium',k:g[0]+' '+g[1]}));return r}
@@ -57,17 +59,30 @@ document.addEventListener('keydown',e=>{if(e.key==='Escape')closeOv();if(e.key==
 
 /* ---------- navigasi ---------- */
 const MI={home:'<path d="M4 11l8-7 8 7v9a1 1 0 0 1-1 1h-4v-6H9v6H5a1 1 0 0 1-1-1z"/>',unit:'<path d="M5 4h11a3 3 0 0 1 3 3v13H8a3 3 0 0 1-3-3z M5 17a3 3 0 0 1 3-3h11"/>',tokoh:'<circle cx="9" cy="8" r="3.2"/><path d="M3 20c.6-3.5 3-5.2 6-5.2s5.4 1.7 6 5.2 M16 5.2a3 3 0 0 1 0 5.6 M18 14.8c1.8.6 3 2.2 3.3 4.6"/>',glos:'<path d="M5 4h12a2 2 0 0 1 2 2v14H7a2 2 0 0 1-2-2z M9 8h6 M9 12h6"/>',more:'<circle cx="6" cy="12" r="1.3" fill="currentColor"/><circle cx="12" cy="12" r="1.3" fill="currentColor"/><circle cx="18" cy="12" r="1.3" fill="currentColor"/>'};
-function renderMnav(a){const m=$('#mnav');if(!m)return;const u=a.startsWith('unit-')?a.slice(5):'',ic=k=>`<svg viewBox="0 0 24 24" aria-hidden="true">${MI[k]}</svg>`;
-  const L=(h,k,l)=>`<a href="#${h}" class="${a===h?'on':''}" ${a===h?'aria-current="page"':''}>${ic(k)}${l}</a>`;
-  m.innerHTML=L('beranda','home','Beranda')+`<button type="button" data-sh="unit" class="${u?'on':''}" aria-haspopup="dialog">${ic('unit')}${u?'Unit '+esc(u):'Unit'}</button>`+L('tokoh','tokoh','Tokoh')+L('glosarium','glos','Glosarium')+(Sess.role()!=='murid'?`<button type="button" data-sh="more" class="${/^(panduan-guru|dasbor)$/.test(a)?'on':''}" aria-haspopup="dialog">${ic('more')}Lainnya</button>`:'')}
-function sheet(title,rows){ov.className='ov sh';ov.innerHTML=`<div class="box sheet" role="dialog" aria-label="${esc(title)}"><div class="grab"></div><h3>${esc(title)}</h3>${rows}</div>`;$$('a',ov).forEach(a=>a.onclick=closeOv)}
+function renderMnav(a){const m=$('#mnav');if(!m)return;const more=Sess.role()!=='murid',u=a.startsWith('unit-')?a.slice(5):'',sig=more?'5':'4',ic=k=>`<svg viewBox="0 0 24 24" aria-hidden="true">${MI[k]}</svg>`;
+  /* bilah dibuat sekali; selanjutnya hanya kelas aktif dan label yang diperbarui, supaya bilah tidak berkedip/bergeser */
+  if(m.dataset.sig!==sig){m.dataset.sig=sig;const A=(h,k,l)=>`<a href="#${h}" data-t="${h}">${ic(k)}<span class="lb">${l}</span></a>`;
+    m.innerHTML=A('beranda','home','Beranda')+`<button type="button" data-sh="unit" data-t="unit" aria-haspopup="dialog">${ic('unit')}<span class="lb">Unit</span></button>`+A('tokoh','tokoh','Tokoh')+A('glosarium','glos','Glosarium')+(more?`<button type="button" data-sh="more" data-t="more" aria-haspopup="dialog">${ic('more')}<span class="lb">Lainnya</span></button>`:'')}
+  $$('[data-t]',m).forEach(x=>{const t=x.dataset.t,on=t==='unit'?!!u:t==='more'?/^(panduan-guru|dasbor)$/.test(a):a===t;x.classList.toggle('on',on);if(on&&!x.dataset.sh)x.setAttribute('aria-current','page');else x.removeAttribute('aria-current')});
+  const lb=$('[data-t=unit] .lb',m);if(lb)lb.textContent=u?'Unit '+u:'Unit'}
+function sheet(title,rows){ov.removeAttribute('style');ov.className='ov sh';ov.innerHTML=`<div class="box sheet" role="dialog" aria-label="${esc(title)}"><div class="gh"><div class="grab"></div><h3>${esc(title)}</h3></div>${rows}</div>`;$$('a',ov).forEach(a=>a.onclick=closeOv);dragSheet()}
+/* tutup lembar dengan geser ke bawah pada gagang/judul (atau ketuk gagang) */
+function dragSheet(){const box=$('.box.sheet',ov),gh=$('.gh',box);if(!box||!gh)return;let y0=0,dy=0,t0=0,on=false;
+  const set=v=>{box.style.transform=v?`translateY(${v}px)`:'';ov.style.setProperty('--bd',String(Math.max(0,1-v/Math.max(1,box.offsetHeight))))};
+  const shut=()=>{box.style.transition='transform .24s var(--ease)';ov.style.transition='background-color .24s ease';set(box.offsetHeight);setTimeout(closeOv,230)};
+  gh.addEventListener('pointerdown',e=>{if(e.pointerType==='mouse'&&e.button)return;on=true;y0=e.clientY;dy=0;t0=performance.now();box.style.animation='none';box.style.transition='none';ov.style.transition='none';try{gh.setPointerCapture(e.pointerId)}catch(x){}});
+  gh.addEventListener('pointermove',e=>{if(!on)return;dy=Math.max(0,e.clientY-y0);set(dy)});
+  const end=()=>{if(!on)return;on=false;const dt=Math.max(1,performance.now()-t0),v=dy/dt;
+    if(dy>90||v>.6||(dy<4&&dt<250))shut();else{box.style.transition='transform .24s var(--ease)';ov.style.transition='background-color .24s ease';set(0)}};
+  gh.addEventListener('pointerup',end);gh.addEventListener('pointercancel',end)}
 $('#mnav').addEventListener('click',e=>{const b=e.target.closest('[data-sh]');if(!b)return;const cur=location.hash.slice(1);
   if(b.dataset.sh==='unit')sheet('Pilih unit',UNITS.map(u=>`<a class="si ${cur==='unit-'+u.id?'cur':''}" href="#unit-${u.id}"><i>${u.id}</i><span><b>${esc(u.judul.split(':')[0])}</b><small>${esc(u.periode)} · ${esc(u.waktu)}</small></span>${state.done[u.id]?'<em>Selesai</em>':''}</a>`).join(''));
   else sheet('Lainnya',`<a class="si" href="#panduan-guru"><span><b>Panduan guru</b><small>Skenario, rubrik, episode sensitif</small></span></a>`+(Sess.role()==='guru'?`<a class="si" href="#dasbor"><span><b>Dasbor</b><small>Pantau progres kelas</small></span></a>`:''))});
 document.addEventListener('focusin',e=>{if(/^(INPUT|TEXTAREA|SELECT)$/.test(e.target.tagName))document.body.classList.add('typing')});
 document.addEventListener('focusout',()=>document.body.classList.remove('typing'));
 function renderNav(a){const nv0=$('#nav'),sl0=nv0.scrollLeft;nv0.innerHTML=[['beranda','Beranda'],...UNITS.map(u=>['unit-'+u.id,String(u.id),u]),['glosarium','Glosarium'],['tokoh','Tokoh'],...(Sess.role()!=='murid'?[['panduan-guru','Panduan guru']]:[]),...(Sess.role()==='guru'?[['dasbor','Dasbor']]:[])].map(([h,l,u])=>`<a href="#${h}" class="${a===h?'active':''} ${u&&state.done[u.id]?'done':''}" ${u?`title="${esc(u.judul)}" aria-label="Unit ${u.id}"`:''} ${a===h?'aria-current="page"':''}>${u?'Unit '+l:l}</a>`).join('');nv0.scrollLeft=sl0;const act=$('#nav a.active');if(act)ctr(act);fades();Fx.nav();renderMnav(a);Sess.paint()}
-function after(wide){wide=wide||/^(beranda|tokoh)?$/.test(location.hash.slice(1));app.classList.toggle('wide',!!wide);$$('#nav,.tl,.toc ol,.chips').forEach(x=>x.classList.add('dragx'));fades();jumpTop();app.focus({preventScroll:true});if(obs)obs.disconnect();obs=new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting){e.target.classList.add('in');obs.unobserve(e.target)}}),{rootMargin:'0px 0px -8% 0px'});$$('.rv').forEach(x=>obs.observe(x))}
+function labelTables(){$$('table',app).forEach(t=>{const h=[...t.querySelectorAll('thead th')].map(x=>x.textContent.trim());t.querySelectorAll('tbody tr').forEach(r=>[...r.children].forEach((c,i)=>{if(h[i])c.dataset.label=h[i]}))})}
+function after(wide){labelTables();wide=wide||/^(beranda|tokoh)?$/.test(location.hash.slice(1));app.classList.toggle('wide',!!wide);$$('#nav,.tl,.toc ol,.chips').forEach(x=>x.classList.add('dragx'));fades();jumpTop();app.focus({preventScroll:true});if(obs)obs.disconnect();obs=new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting){e.target.classList.add('in');obs.unobserve(e.target)}}),{rootMargin:'0px 0px -8% 0px'});$$('.rv').forEach(x=>obs.observe(x))}
 (function(){const bar=$('#bar');let on=getComputedStyle(bar).display!=='none',tk=0;
   addEventListener('resize',()=>{on=getComputedStyle(bar).display!=='none'});
   addEventListener('scroll',()=>{if(!on||tk)return;tk=requestAnimationFrame(()=>{tk=0;const h=document.documentElement;bar.style.transform='scaleX('+(h.scrollTop/Math.max(1,h.scrollHeight-h.clientHeight))+')'})},{passive:true})})();
@@ -135,7 +150,7 @@ function viewUnit(id){const u=UNITS.find(x=>x.id===id);if(!u){location.hash='#be
 
 /* ---------- glosarium, tokoh ---------- */
 function viewGlosarium(){renderNav('glosarium');
-  app.innerHTML=`<h1>Glosarium</h1><p class="meta">Istilah Belanda dan Tionghoa yang muncul dalam unit.</p><input class="find" id="f" placeholder="Cari istilah" aria-label="Cari istilah"><div class="tscroll"><table><thead><tr><th>Istilah</th><th>Arti dalam modul ini</th></tr></thead><tbody id="tb">${GLOSARIUM.map(g=>`<tr><td><b>${esc(g[0])}</b></td><td>${esc(g[1])}</td></tr>`).join('')}</tbody></table></div>`;
+  app.innerHTML=`<h1>Glosarium</h1><p class="meta">Istilah Belanda dan Tionghoa yang muncul dalam unit.</p><input class="find" id="f" placeholder="Cari istilah" aria-label="Cari istilah"><div class="tscroll"><table class="nolbl"><thead><tr><th>Istilah</th><th>Arti dalam modul ini</th></tr></thead><tbody id="tb">${GLOSARIUM.map(g=>`<tr><td><b>${esc(g[0])}</b></td><td>${esc(g[1])}</td></tr>`).join('')}</tbody></table></div>`;
   $('#f').oninput=e=>{const s=e.target.value.toLowerCase();$$('#tb tr').forEach(r=>r.classList.toggle('hidden',!r.textContent.toLowerCase().includes(s)))};after(false)}
 function viewTokoh(){renderNav('tokoh');const rows=[];UNITS.forEach(u=>u.tokoh.forEach(t=>{if(!t.nama.startsWith('['))rows.push({n:t.nama,u:u.id,th:t.tahun,t:t.tindakan})}));rows.sort((a,b)=>a.n.localeCompare(b.n));
   app.innerHTML=`<h1>Indeks tokoh</h1><p class="meta">${rows.length} kartu tokoh, urut abjad, dengan unit tempatnya muncul.</p><input class="find" id="f" placeholder="Cari nama atau tindakan" aria-label="Cari tokoh"><div class="chips"><button class="ghost" aria-pressed="true" data-u="">Semua unit</button>${UNITS.map(u=>`<button class="ghost" aria-pressed="false" data-u="${u.id}">Unit ${u.id}</button>`).join('')}</div>
@@ -149,7 +164,7 @@ function viewGuru(){renderNav('panduan-guru');
   app.innerHTML=`<h1>Panduan guru</h1>
   <h2>Skenario 45 menit per unit</h2>
   <div class="fase" aria-hidden="true">${F.map(f=>`<i style="flex:${f[1]-f[0]}">${f[0]}–${f[1]}</i>`).join('')}</div>
-  <div class="tscroll"><table><thead><tr><th>Menit</th><th>Kegiatan</th><th>Catatan</th></tr></thead><tbody>${F.map(f=>`<tr><td>${f[0]}–${f[1]}</td><td>${f[2]}</td><td>${f[3]}</td></tr>`).join('')}</tbody></table></div>
+  <div class="tscroll"><table class="jd"><thead><tr><th>Menit</th><th>Kegiatan</th><th>Catatan</th></tr></thead><tbody>${F.map(f=>`<tr><td>${f[0]}–${f[1]}</td><td>${f[2]}</td><td>${f[3]}</td></tr>`).join('')}</tbody></table></div>
   <p style="margin-top:1em">Bila jam terpotong: bagian baca mandiri dan cek pemahaman dikerjakan di rumah lewat tautan modul; pertemuan dipakai untuk bandingkan sumber dan penutup (25 menit).</p>
   <h2 style="margin-top:2.2rem">Rubrik tugas bandingkan sumber</h2>
   <div class="tscroll"><table><thead><tr><th>Tingkat</th><th>Deskripsi</th><th>Skor</th></tr></thead><tbody>
