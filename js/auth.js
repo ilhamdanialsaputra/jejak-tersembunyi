@@ -5,6 +5,11 @@
    ============================================================ */
 /* siluet profil kosong (bukan huruf depan) */
 const PFP='<svg class="pf" viewBox="0 0 24 24" aria-hidden="true"><circle class="pbg" cx="12" cy="12" r="12"/><circle class="pfg" cx="12" cy="9.3" r="4"/><path class="pfg" d="M4.6 20.6c.7-4 3.6-6.3 7.4-6.3s6.7 2.3 7.4 6.3a11.9 11.9 0 0 1-14.8 0z"/></svg>';
+/* foto profil Google bila ada; bila gagal dimuat, siluet di bawahnya tetap terlihat */
+const avatar=u=>u&&u.foto?`<span class="phw">${PFP}<img src="${esc(u.foto)}" alt="" referrerpolicy="no-referrer" onerror="this.remove()"></span>`:PFP;
+const avS=u=>u.foto?`<span class="av s pf">${avatar(u)}</span>`:`<span class="av s">${esc(ini(u.nama))}</span>`;
+const idOf=u=>u.role==='guru'?(u.email||''):(u.nis?'NIS '+u.nis:(u.email||'Murid'));
+const GIC='<svg class="gic" viewBox="0 0 48 48" aria-hidden="true"><path fill="#EA4335" d="M24 9.5c3.5 0 6.6 1.2 9.1 3.6l6.8-6.8C35.8 2.4 30.3 0 24 0 14.6 0 6.5 5.4 2.6 13.2l7.9 6.1C12.4 13.6 17.7 9.5 24 9.5z"/><path fill="#4285F4" d="M46.5 24.5c0-1.6-.1-3.1-.4-4.5H24v9h12.7c-.6 3-2.3 5.5-4.8 7.2l7.5 5.8c4.4-4.1 7.1-10.1 7.1-17.5z"/><path fill="#FBBC05" d="M10.5 28.7a14.5 14.5 0 0 1 0-9.4l-7.9-6.1a24 24 0 0 0 0 21.6l7.9-6.1z"/><path fill="#34A853" d="M24 48c6.5 0 11.9-2.1 15.9-5.8l-7.5-5.8c-2.1 1.4-4.9 2.3-8.4 2.3-6.3 0-11.6-4.1-13.5-9.8l-7.9 6.1C6.5 42.6 14.6 48 24 48z"/></svg>';
 const Sess=(()=>{
   let user=null,timer=null,fb={};const G='jejak-guest';
   const api={
@@ -36,12 +41,12 @@ const Sess=(()=>{
     paint(){const b=document.getElementById('bAcc');if(!b)return;
       document.body.classList.toggle('is-auth',(location.hash||'').slice(1)==='masuk');document.body.dataset.role=user?user.role:'tamu';
       b.classList.toggle('on',!!user);b.setAttribute('aria-label',user?'Akun: '+user.nama:'Masuk');
-      b.innerHTML=user?PFP:'<svg viewBox="0 0 24 24"><circle cx="12" cy="8.5" r="3.6"/><path d="M5 20c.8-3.6 3.7-5.4 7-5.4s6.2 1.8 7 5.4"/></svg>'},
+      b.innerHTML=user?avatar(user):'<svg viewBox="0 0 24 24"><circle cx="12" cy="8.5" r="3.6"/><path d="M5 20c.8-3.6 3.7-5.4 7-5.4s6.2 1.8 7 5.4"/></svg>'},
     async panel(){
       if(!user){api.go('masuk');return}
       const c=await Store.teacher.classInfo(user.kelas);
-      ov.className='ov';ov.innerHTML=`<div class="box acc"><div class="av pf">${PFP}</div><h3>${esc(user.nama)}</h3>
-        <p class="meta">${user.role==='guru'?'Guru':'Murid'} · ${esc(user.role==='guru'?user.email:'NIS '+user.nis)}</p>
+      ov.className='ov';ov.innerHTML=`<div class="box acc"><div class="av pf">${avatar(user)}</div><h3>${esc(user.nama)}</h3>
+        <p class="meta">${user.role==='guru'?'Guru':'Murid'} · ${esc(idOf(user))}</p>
         <p class="kls">${c?esc(c.nama):''} <span>Kode kelas <b>${esc(user.kelas)}</b></span></p>
         <div class="btnrow"><button id="lo">Keluar</button><button class="ghost" id="cl">Tutup</button></div></div>`;
       $('#lo').onclick=api.out;$('#cl').onclick=closeOv;ov.onclick=e=>{if(e.target===ov)closeOv()}}
@@ -71,18 +76,57 @@ function viewMasuk(){
        :F('nama','Nama lengkap','text','','name')+F('email','Email','email','','email')+F('kelas','Nama kelas / mata pelajaran','text','mis. XI-3 Sejarah','off')+F('pw','Kata sandi (min. 6 karakter)','password','','new-password')}
      <p class="err" id="er" role="alert"></p>
      <button type="submit" class="full">${L?'Masuk':M?'Daftar dan masuk':'Buat akun guru'}</button></form>
+    ${Store.auth.google?'<button type="button" class="lnk" id="bk">← Kembali ke masuk dengan Google</button>':''}
     <button type="button" class="lnk" id="gs">Lanjut tanpa akun (hanya di perangkat ini)</button>`;
     box.querySelector('.tabs2').style.setProperty('--i',L?0:1);
     box.querySelectorAll('[data-m]').forEach(b=>b.onclick=()=>{mode=b.dataset.m;draw()});
     box.querySelectorAll('[data-r]').forEach(b=>b.onclick=()=>{role=b.dataset.r;draw()});
-    $('#gs').onclick=Sess.guestGo;
+    $('#gs').onclick=Sess.guestGo;const bk=$('#bk');if(bk)bk.onclick=home;
     $('#fm').onsubmit=async e=>{e.preventDefault();const f=e.target,v=Object.fromEntries(new FormData(f)),bt=f.querySelector('.full'),er=$('#er');
       er.textContent='';
       try{await busy(bt,(async()=>{const u=L?await Store.auth.login({id:v.id,password:v.pw}):M?await Store.auth.registerStudent({nama:v.nama,nis:v.nis,kode:v.kode,password:v.pw}):await Store.auth.registerTeacher({nama:v.nama,email:v.email,kelas:v.kelas,password:v.pw});
         await Sess.enter(u)})(),L?'Memeriksa…':'Membuat akun…')}catch(x){er.textContent=x.message;f.animate([{transform:'translateX(0)'},{transform:'translateX(-6px)'},{transform:'translateX(6px)'},{transform:'none'}],{duration:260})}};
     if(box.animate)box.querySelector('form').animate([{opacity:0,transform:'translateY(8px)'},{opacity:1,transform:'none'}],{duration:320,easing:'cubic-bezier(.2,.7,.2,1)'});
   };
-  draw();after(true);
+  /* ---- layar utama: Google ---- */
+  const inApp=/FBAN|FBAV|Instagram|Line\/|TikTok|; wv\)/i.test(navigator.userAgent);
+  const home=()=>{
+    if(!Store.auth.google){draw();return}
+    box.innerHTML=`<h2>Selamat datang</h2><p class="hint">Masuk dengan akun Google, untuk murid maupun guru. Cukup pilih akun.</p>
+    ${inApp?'<p class="warnb">Kamu membuka lewat aplikasi lain. Google memblokir login di sini. Buka tautan ini di Chrome atau Safari.</p>':''}
+    <button type="button" class="gbtn" id="gg">${GIC}<span>Lanjutkan dengan Google</span></button>
+    <p class="err" id="er" role="alert"></p>
+    <button type="button" class="lnk" id="pw">Punya akun NIS atau email dan kata sandi? Masuk di sini</button>
+    <button type="button" class="lnk" id="gs">Lanjut tanpa akun (hanya di perangkat ini)</button>`;
+    $('#gs').onclick=Sess.guestGo;$('#pw').onclick=()=>{mode='masuk';draw()};
+    $('#gg').onclick=async e=>{const b=e.currentTarget,er=$('#er');er.textContent='';
+      try{const r=await busy(b,Store.auth.google(),'Membuka Google…');
+        if(r.user)await Sess.enter(r.user);else onboard(r.baru)}
+      catch(x){er.textContent=x.message}};
+    if(box.animate)box.animate([{opacity:0,transform:'translateY(8px)'},{opacity:1,transform:'none'}],{duration:320,easing:'cubic-bezier(.2,.7,.2,1)'});
+  };
+  /* ---- pengguna Google baru: pilih peran, lengkapi satu isian ---- */
+  const onboard=g=>{
+    let r='murid';
+    const paint=()=>{const M=r==='murid';
+      box.innerHTML=`<div class="lcard gme"><div class="av pf">${avatar(g)}</div><div class="lwho"><b>${esc(g.nama)}</b><small>${esc(g.email)}</small></div></div>
+      <h2>Satu langkah lagi</h2><p class="hint">Kamu masuk sebagai siapa?</p>
+      <div class="seg role"><button type="button" data-r="murid" aria-pressed="${M}">Murid</button><button type="button" data-r="guru" aria-pressed="${!M}">Guru</button></div>
+      <form id="fo" novalidate>
+       ${M?F('kode','Kode kelas','text','5 karakter dari gurumu','off')+'<label class="fl"><span>NIS (opsional)</span><input name="nis" type="text" inputmode="numeric" placeholder="Boleh dikosongkan" autocomplete="off"></label>'
+          :F('kelas','Nama kelas / mata pelajaran','text','mis. XI-3 Sejarah','off')}
+       <p class="err" id="er" role="alert"></p>
+       <button type="submit" class="full">${M?'Gabung kelas':'Buat kelas'}</button></form>
+      <button type="button" class="lnk" id="sw">Pakai akun Google lain</button>`;
+      box.querySelectorAll('[data-r]').forEach(b=>b.onclick=()=>{r=b.dataset.r;paint()});
+      $('#sw').onclick=async()=>{try{await Store.auth.logout()}catch(e){}home()};
+      $('#fo').onsubmit=async e=>{e.preventDefault();const f=e.target,v=Object.fromEntries(new FormData(f)),er=$('#er');er.textContent='';
+        try{await busy(f.querySelector('.full'),(async()=>{await Sess.enter(await Store.auth.completeGoogle({role:r,kode:v.kode,nis:v.nis,kelas:v.kelas}))})(),'Menyimpan…')}
+        catch(x){er.textContent=x.message;f.animate([{transform:'translateX(0)'},{transform:'translateX(-6px)'},{transform:'translateX(6px)'},{transform:'none'}],{duration:260})}};
+    };
+    paint();
+  };
+  home();after(true);
 }
 
 /* ---------------- Dasbor guru ---------------- */
@@ -118,7 +162,7 @@ async function viewDasbor(soft){
     <div class="kode"><span>Kode kelas untuk murid</span><b id="kd">${esc(info.kode||me.kelas)}</b><button class="ghost" id="cp">Salin</button></div></header>
    ${n?`<div class="kpis">${kpi('Murid terdaftar',n,'di kelas ini')}${kpi('Rata-rata progres',avg+'%','dari tujuh unit')}${kpi('Aktif 7 hari terakhir',act+'<i>/'+n+'</i>','murid')}${kpi('Jawaban terkumpul',ans,'pemantik, refleksi, cek')}</div>
    <div class="dgrid"><section class="panel"><h3>Ketuntasan per unit</h3>${unitBars}</section>
-    <section class="panel"><h3>Perlu perhatian</h3>${risk.length?risk.map(r=>`<button class="rk" data-i="${R.indexOf(r)}"><span class="av s">${esc(ini(r.user.nama))}</span><span><b>${esc(r.user.nama)}</b><small>${!r.c.last?'Belum mulai belajar':Date.now()-r.c.last>6048e5?'Tidak aktif '+rel(r.c.last).replace(' lalu',''):'Progres masih '+r.c.pct+'%'}</small></span></button>`).join(''):'<p class="muted">Semua murid aktif dan berjalan baik.</p>'}</section></div>
+    <section class="panel"><h3>Perlu perhatian</h3>${risk.length?risk.map(r=>`<button class="rk" data-i="${R.indexOf(r)}">${avS(r.user)}<span><b>${esc(r.user.nama)}</b><small>${!r.c.last?'Belum mulai belajar':Date.now()-r.c.last>6048e5?'Tidak aktif '+rel(r.c.last).replace(' lalu',''):'Progres masih '+r.c.pct+'%'}</small></span></button>`).join(''):'<p class="muted">Semua murid aktif dan berjalan baik.</p>'}</section></div>
    <section class="panel tbl"><div class="tb"><input class="find" id="q" placeholder="Cari nama atau NIS" aria-label="Cari murid"><select id="so" aria-label="Urutkan"><option value="n">Urut nama</option><option value="p">Progres tertinggi</option><option value="pl">Progres terendah</option><option value="t">Terakhir aktif</option></select><button class="ghost" id="ex" type="button">CSV ringkasan</button><button class="ghost" id="ex2" type="button">CSV jawaban</button><span class="st" id="exs" role="status"></span></div>
     <div class="lg"><span><i class="hc s2"></i>Selesai</span><span><i class="hc s1"></i>Sedang dibaca</span><span><i class="hc s0"></i>Belum</span></div>
     <div class="rows" id="rows"></div></section>`
@@ -130,10 +174,10 @@ async function viewDasbor(soft){
   const sd=$('#sd');if(sd)sd.onclick=async()=>{await Store.teacher.seedDemo(me.kelas,UNITS);viewDasbor()};
   if(!n)return;
   const draw=()=>{const q=$('#q').value.trim().toLowerCase(),s=$('#so').value;
-    const L=R.filter(r=>!q||(r.user.nama+' '+r.user.nis).toLowerCase().includes(q));
+    const L=R.filter(r=>!q||(r.user.nama+' '+(r.user.nis||'')+' '+(r.user.email||'')).toLowerCase().includes(q));
     L.sort(s==='p'?(a,b)=>b.c.pct-a.c.pct:s==='pl'?(a,b)=>a.c.pct-b.c.pct:s==='t'?(a,b)=>b.c.last-a.c.last:(a,b)=>a.user.nama.localeCompare(b.user.nama));
     $('#rows').innerHTML=L.length?L.map(r=>{const age=Date.now()-r.c.last,dot=!r.c.last?'off':age<2*864e5?'on':age<6048e5?'mid':'off';
-      return`<div class="row" tabindex="0" role="button" data-i="${R.indexOf(r)}"><div class="who"><span class="av s">${esc(ini(r.user.nama))}</span><span><b>${esc(r.user.nama)}</b><small>NIS ${esc(r.user.nis)}</small></span></div>
+      return`<div class="row" tabindex="0" role="button" data-i="${R.indexOf(r)}"><div class="who">${avS(r.user)}<span><b>${esc(r.user.nama)}</b><small>${esc(idOf(r.user))}</small></span></div>
        <div class="pg"><div class="tr"><i style="width:${r.c.pct}%"></i></div><b>${r.c.pct}%</b></div>
        <div class="hm" aria-label="Status tiap unit">${r.c.rows.map(x=>`<i class="hc s${x.st}" title="Unit ${x.id}: ${['belum','sedang dibaca','selesai'][x.st]}"></i>`).join('')}</div>
        <div class="wd">${r.c.words}<small>kata</small></div><div class="la"><i class="dot ${dot}"></i>${rel(r.c.last)}</div></div>`}).join(''):'<p class="muted pad">Tidak ada murid yang cocok.</p>'};
@@ -148,9 +192,9 @@ async function viewDasbor(soft){
   const dl=(nama,rows)=>{const a=document.createElement('a');a.href=URL.createObjectURL(new Blob(['\ufeff'+rows.map(r=>r.map(cell).join(',')).join('\r\n')],{type:'text/csv;charset=utf-8'}));a.download=nama;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),2e3)};
   const ST=['belum','sedang dibaca','selesai'];
   $('#ex').onclick=()=>{
-    const h=['Nama','NIS','Kelas','Progres %','Unit selesai','Jawaban terkirim','Total kata','Terakhir aktif'];
+    const h=['Nama','NIS','Email','Kelas','Progres %','Unit selesai','Jawaban terkirim','Total kata','Terakhir aktif'];
     UNITS.forEach(u=>h.push('Unit '+u.id+' status','Unit '+u.id+' bagian dibaca (dari 8)','Unit '+u.id+' jawaban terkirim'));
-    dl('ringkasan-'+kode+'-'+nowStr()+'.csv',[h,...R.map(r=>[r.user.nama,r.user.nis,info.nama,r.c.pct,r.c.doneN,r.c.ans,r.c.words,ts(r.c.last),
+    dl('ringkasan-'+kode+'-'+nowStr()+'.csv',[h,...R.map(r=>[r.user.nama,r.user.nis||'',r.user.email||'',info.nama,r.c.pct,r.c.doneN,r.c.ans,r.c.words,ts(r.c.last),
       ...r.c.rows.flatMap(x=>[ST[x.st],x.seen,x.ans])])])};
   const JENIS=k=>k==='pemantik'?'Pemantik':/^q\d+$/.test(k)?'Bandingkan sumber':k==='refleksi'?'Refleksi':/^c\d+$/.test(k)?'Cek pemahaman':'Lainnya';
   const TANYA=(u,k)=>k==='pemantik'?u.pemantik.teks:k==='refleksi'?u.refleksi:/^q\d+$/.test(k)?(u.banding.tanya[+k.slice(1)]||k):/^c\d+$/.test(k)?((u.cek[+k.slice(1)]||{}).q||k):k;
@@ -158,10 +202,10 @@ async function viewDasbor(soft){
   $('#ex2').onclick=async e=>{const st=$('#exs');st.textContent='';
     try{await busy(e.currentTarget,(async()=>{
       let gagal=0;const F=await Promise.all(R.map(r=>Store.feedback.load(r.user.uid).catch(()=>{gagal++;return{}})));
-      const rows=[['Nama','NIS','Unit','Judul unit','Jenis','Pertanyaan','Jawaban murid','Jumlah kata','Waktu dikirim','Umpan balik guru','Waktu umpan balik']];
+      const rows=[['Nama','NIS','Email','Unit','Judul unit','Jenis','Pertanyaan','Jawaban murid','Jumlah kata','Waktu dikirim','Umpan balik guru','Waktu umpan balik']];
       R.forEach((r,i)=>UNITS.forEach(u=>{const S=((r.progress.sent||{})[u.id])||{};
         Object.keys(S).filter(k=>wc(S[k].t)).sort((x,y)=>RK(x)-RK(y)||x.localeCompare(y,undefined,{numeric:true})).forEach(k=>{const f=F[i][u.id+'_'+k]||{};
-          rows.push([r.user.nama,r.user.nis,u.id,u.judul,JENIS(k),TANYA(u,k),S[k].t,wc(S[k].t),ts(S[k].at),f.t||'',ts(f.at)])})}));
+          rows.push([r.user.nama,r.user.nis||'',r.user.email||'',u.id,u.judul,JENIS(k),TANYA(u,k),S[k].t,wc(S[k].t),ts(S[k].at),f.t||'',ts(f.at)])})}));
       if(rows.length<2){st.textContent='Belum ada jawaban yang dikirim murid.';return}
       dl('jawaban-'+kode+'-'+nowStr()+'.csv',rows);
       st.textContent=(rows.length-1)+' jawaban diunduh'+(gagal?' · umpan balik '+gagal+' murid gagal dimuat':'')})(),'Menyiapkan…')}
@@ -169,7 +213,7 @@ async function viewDasbor(soft){
 }
 async function detail(r){
   const M=matchMedia('(max-width:899px)').matches;
-  const hd=`<span class="av">${esc(ini(r.user.nama))}</span><div><h3>${esc(r.user.nama)}</h3><p class="meta">NIS ${esc(r.user.nis)} · ${r.c.pct}% · terakhir aktif ${rel(r.c.last)}</p></div><button type="button" class="ghost" id="dx" aria-label="Tutup">Tutup</button>`,
+  const hd=`${r.user.foto?`<span class="av pf">${avatar(r.user)}</span>`:`<span class="av">${esc(ini(r.user.nama))}</span>`}<div><h3>${esc(r.user.nama)}</h3><p class="meta">${esc(idOf(r.user))} · ${r.c.pct}% · terakhir aktif ${rel(r.c.last)}</p></div><button type="button" class="ghost" id="dx" aria-label="Tutup">Tutup</button>`,
     load='<p class="meta dload"><i class="spin"></i>Memuat jawaban…</p>';
   /* kerangka dibuat SEKALI; hanya isi .dbody yang diganti setelah data datang, jadi sheet tidak dibuat ulang dan animasinya tidak mengulang */
   ov.removeAttribute('style');delete ov.dataset.closing;
