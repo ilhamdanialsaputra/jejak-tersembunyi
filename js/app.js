@@ -3,7 +3,7 @@ const KEY='jejak-tersembunyi-v1',PK='jejak-prefs-v1';
 const ld=(k,d)=>{try{return JSON.parse(localStorage.getItem(k))||d}catch(e){return d}};
 const sv=(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}};
 let state=ld(KEY,{});state.done=state.done||{};state.notes=state.notes||{};state.seen=state.seen||{};state.sent=state.sent||{};
-const save=()=>{Sess.syncs()?Sess.push():sv(KEY,state)};
+const save=()=>{if(Sess.role()==='guru')return;Sess.syncs()?Sess.push():sv(KEY,state)};
 const setState=s=>{state=Object.assign({done:{},notes:{},seen:{},sent:{}},s);state.done=state.done||{};state.notes=state.notes||{};state.seen=state.seen||{};state.sent=state.sent||{}};
 let prefs=Object.assign({tema:'auto',ukuran:100,proyektor:false},ld(PK,{}));
 const app=document.getElementById('app'),$=(s,r=document)=>r.querySelector(s),$$=(s,r=document)=>[...r.querySelectorAll(s)];
@@ -85,11 +85,11 @@ function dragSheet(){const box=$('.box.sheet',ov),gh=$('.gh',box);if(!box||!gh)r
 $('#mnav').addEventListener('click',e=>{const b=e.target.closest('[data-sh]');if(!b)return;
   if(ov.classList.contains('sh')&&!ov.classList.contains('hidden')){closeSheet();return}
   const cur=location.hash.slice(1);
-  sheet('Pilih unit',UNITS.map(u=>`<a class="si ${cur==='unit-'+u.id?'cur':''}" href="#unit-${u.id}"><i>${u.id}</i><span><b>${esc(u.judul.split(':')[0])}</b><small>${esc(u.periode)} · ${esc(u.waktu)}</small></span>${state.done[u.id]?'<em>Selesai</em>':''}</a>`).join(''))});
+  sheet('Pilih unit',UNITS.map(u=>`<a class="si ${cur==='unit-'+u.id?'cur':''}" href="#unit-${u.id}"><i>${u.id}</i><span><b>${esc(u.judul.split(':')[0])}</b><small>${esc(u.periode)} · ${esc(u.waktu)}</small></span>${Sess.role()!=='guru'&&state.done[u.id]?'<em>Selesai</em>':''}</a>`).join(''))});
 document.addEventListener('click',e=>{if(e.target.closest('#mSearch'))openSearch()});
 document.addEventListener('focusin',e=>{if(/^(INPUT|TEXTAREA|SELECT)$/.test(e.target.tagName))document.body.classList.add('typing')});
 document.addEventListener('focusout',()=>document.body.classList.remove('typing'));
-function renderNav(a){const nv0=$('#nav'),sl0=nv0.scrollLeft;nv0.innerHTML=[['beranda','Beranda'],...UNITS.map(u=>['unit-'+u.id,String(u.id),u]),['glosarium','Glosarium'],['tokoh','Tokoh'],...(Sess.role()!=='murid'?[['panduan-guru','Panduan guru']]:[]),...(Sess.role()==='guru'?[['dasbor','Dasbor']]:[])].map(([h,l,u])=>`<a href="#${h}" class="${a===h?'active':''} ${u&&state.done[u.id]?'done':''}" ${u?`title="${esc(u.judul)}" aria-label="Unit ${u.id}"`:''} ${a===h?'aria-current="page"':''}>${u?'Unit '+l:l}</a>`).join('');nv0.scrollLeft=sl0;const act=$('#nav a.active');if(act)ctr(act);fades();Fx.nav();renderMnav(a);Sess.paint()}
+function renderNav(a){const nv0=$('#nav'),sl0=nv0.scrollLeft;nv0.innerHTML=[['beranda','Beranda'],...UNITS.map(u=>['unit-'+u.id,String(u.id),u]),['glosarium','Glosarium'],['tokoh','Tokoh'],...(Sess.role()==='guru'?[['panduan-guru','Panduan guru']]:[]),...(Sess.role()==='guru'?[['dasbor','Dasbor']]:[])].map(([h,l,u])=>`<a href="#${h}" class="${a===h?'active':''} ${u&&state.done[u.id]?'done':''}" ${u?`title="${esc(u.judul)}" aria-label="Unit ${u.id}"`:''} ${a===h?'aria-current="page"':''}>${u?'Unit '+l:l}</a>`).join('');nv0.scrollLeft=sl0;const act=$('#nav a.active');if(act)ctr(act);fades();Fx.nav();renderMnav(a);Sess.paint()}
 function labelTables(){$$('table',app).forEach(t=>{const h=[...t.querySelectorAll('thead th')].map(x=>x.textContent.trim());t.querySelectorAll('tbody tr').forEach(r=>[...r.children].forEach((c,i)=>{if(h[i])c.dataset.label=h[i]}))})}
 function after(wide){labelTables();wide=wide||/^(beranda|tokoh)?$/.test(location.hash.slice(1));app.classList.toggle('wide',!!wide);$$('#nav,.tl,.toc ol,.chips').forEach(x=>x.classList.add('dragx'));fades();jumpTop();app.focus({preventScroll:true});if(obs)obs.disconnect();obs=new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting){e.target.classList.add('in');obs.unobserve(e.target)}}),{rootMargin:'0px 0px -8% 0px'});$$('.rv').forEach(x=>obs.observe(x))}
 (function(){const bar=$('#bar');let on=getComputedStyle(bar).display!=='none',tk=0;
@@ -97,15 +97,16 @@ function after(wide){labelTables();wide=wide||/^(beranda|tokoh)?$/.test(location
   addEventListener('scroll',()=>{if(!on||tk)return;tk=requestAnimationFrame(()=>{tk=0;const h=document.documentElement;bar.style.transform='scaleX('+(h.scrollTop/Math.max(1,h.scrollHeight-h.clientHeight))+')'})},{passive:true})})();
 
 /* ---------- beranda ---------- */
-function viewHome(){renderNav('beranda');
+function viewHome(){renderNav('beranda');const GURU=Sess.role()==='guru';
   const selesai=Object.keys(state.done).filter(k=>state.done[k]).length;
+  const nx=UNITS.find(u=>!state.done[u.id]),mulai=Object.keys(state.seen).some(k=>Object.keys(state.seen[k]||{}).length),lanjut=mulai&&nx?{id:nx.id,lbl:'Lanjutkan Unit '+nx.id}:{id:1,lbl:'Mulai dari Unit 1'};
   const nT=UNITS.reduce((a,u)=>a+u.tokoh.filter(t=>!t.nama.startsWith('[')).length,0),nG=UNITS.reduce((a,u)=>a+u.galeri.length,0);
   app.innerHTML=`
   <button type="button" class="msearch" id="mSearch"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="M16 16l5 5"/></svg>Cari unit, tokoh, atau istilah</button>
   <section class="hero"><div>
    <p class="meta mhide">E-modul suplemen Sejarah kelas XI (Fase F) · 6 unit inti + 1 unit lanjutan · prototipe</p>
    <h1>Jejak yang Tersembunyi</h1><p class="sub">Peran Etnis Tionghoa dalam Sejarah Indonesia</p>
-   <div class="acts btnrow" style="margin:0"><a class="btn" href="#unit-1">Mulai dari Unit 1</a><a class="btn ghost" href="#panduan-guru">Panduan guru</a></div>
+   <div class="acts btnrow" style="margin:0">${GURU?'<a class="btn" href="#dasbor">Buka dasbor</a><a class="btn ghost" href="#panduan-guru">Panduan guru</a><a class="btn ghost" href="#unit-1">Baca Unit 1</a>':`<a class="btn" href="#unit-${lanjut.id}">${lanjut.lbl}</a>`}</div>
    <div class="stats"><div><b>${UNITS.length}</b><span>unit</span></div><div><b>${nT}</b><span>kartu tokoh bernama</span></div><div><b>${nG}</b><span>sumber di galeri</span></div><div><b>${UNITS[0].periode.slice(0,4)}–${UNITS[UNITS.length-1].periode.slice(-4)}</b><span>rentang waktu</span></div></div>
   </div></section>
   <p class="lead rv">Buku teks Sejarah kelas XI menyebut etnis Tionghoa pada sembilan halaman dan hanya menamai satu orang. Rumah tempat Sumpah Pemuda diikrarkan disebut, pemiliknya tidak. Rumah tempat Sukarno dan Hatta diinapkan di Rengasdengklok disebut, pemiliknya tidak. Modul ini menceritakan sisanya: dari pasar dan kampung tempat mereka hidup, lewat tokoh-tokoh bernama, sampai peristiwa besar yang sudah kalian kenal.</p>
@@ -116,14 +117,14 @@ function viewHome(){renderNav('beranda');
     <div><b>Siapa yang membuat sumber ini?</b>Laporan pejabat VOC tentang 1740 ditulis oleh orang yang perlu membela diri; babad Jawa tentang peristiwa yang sama ditulis oleh pihak lain.</div>
     <div><b>Apa yang bisa dan tidak bisa ditunjukkan sumber ini?</b>Foto rumah di Kramat 106 menunjukkan bentuk rumahnya, bukan siapa pemiliknya.</div>
     <div><b>Siapa yang belum terdengar?</b>Kalau sebuah bab menyebut “peranakan Tionghoa” sebagai golongan tanpa satu pun nama, itu bukan karena namanya tidak ada.</div></div>
-  <h2 class="rv" style="margin-top:2.4rem">Peta modul <span class="pill">${selesai}/7 unit selesai</span></h2>
-  <div class="peta rv">${UNITS.map(u=>`<a href="#unit-${u.id}" class="${state.done[u.id]?'done':''}"><span class="n"><i>${u.id}</i>${esc(u.periode)}</span><b>${esc(u.judul)}</b><span>${esc(u.bab)} · ${esc(u.waktu)}${u.sensitif?' · episode sensitif':''}</span></a>`).join('')}</div>
+  <h2 class="rv" style="margin-top:2.4rem">Peta modul${GURU?'':` <span class="pill">${selesai}/7 unit selesai</span>`}</h2>
+  <div class="peta rv">${UNITS.map(u=>`<a href="#unit-${u.id}" class="${!GURU&&state.done[u.id]?'done':''}"><span class="n"><i>${u.id}</i>${esc(u.periode)}</span><b>${esc(u.judul)}</b><span>${esc(u.bab)} · ${esc(u.waktu)}${u.sensitif?' · episode sensitif':''}</span></a>`).join('')}</div>
   <h2 class="rv" style="margin-top:2.4rem">Pola setiap unit</h2>
   <p class="rv">Setiap unit dibuka dari kehidupan sehari-hari, bukan dari peristiwa politik; bertumpu pada kartu tokoh bernama; membawa satu foto, satu dokumen, dan satu video dengan asal sumbernya; dan selalu diakhiri dengan satu latihan membandingkan dua sumber, karena sejarah yang baik bukan sejarah yang dihafal, melainkan sejarah yang diperiksa. Panjang tiap unit 600–900 kata, paling banyak lima nama baru.</p>
   <h2 class="rv">Tujuan pembelajaran</h2>
   <p class="rv">Setelah menyelesaikan setiap unit, siswa dapat (1) menyebutkan sekurang-kurangnya dua tokoh atau kelompok etnis Tionghoa yang terlibat beserta tindakannya; (2) menjelaskan konteks sosial sehari-hari yang melatari peristiwa; (3) membandingkan dua sumber tentang peristiwa yang sama dan menyimpulkan apa yang tidak dapat ditunjukkan tiap sumber; (4) mengidentifikasi apa yang belum disebut buku teks; (5) menunjukkan sikap menghargai kontribusi kelompok yang berbeda dalam sejarah bangsa.</p>
-  <div class="btnrow"><a class="btn" href="#unit-1">Mulai dari Unit 1</a><button class="ghost" id="reset">Hapus catatan dan kemajuan</button></div>`;
-  $('#reset').onclick=()=>{if(confirm('Hapus semua catatan refleksi, jawaban, dan tanda selesai di peramban ini?')){state={done:{},notes:{},seen:{},sent:{}};save();viewHome()}};
+  ${GURU||Sess.user()?'':'<div class="btnrow"><button class="ghost" id="reset">Hapus catatan dan kemajuan</button></div>'}`;
+  const rs=$('#reset');if(rs)rs.onclick=()=>{if(confirm('Hapus semua catatan refleksi, jawaban, dan tanda selesai di peramban ini?')){state={done:{},notes:{},seen:{},sent:{}};save();viewHome()}};
   after(false)}
 
 /* ---------- unit ---------- */
@@ -131,22 +132,22 @@ function viewHome(){renderNav('beranda');
 function infoUnit(u){
   const p=u.bab.split(' · '),bab=p[0],hl=p.slice(1).join(' · ');
   const R=[['Buku teks',bab],...(hl?[[/^hlm\./.test(hl)?'Halaman':'Rujukan',hl.replace(/^hlm\.\s*/,'')]]:[]),['Periode',u.periode],['Waktu baca',u.waktu]];
-  const body=`<dl class="inf">${R.map(([k,v])=>`<div><dt>${k}</dt><dd>${esc(v)}</dd></div>`).join('')}</dl>${u.sensitif?'<p class="sensn"><b>Episode sensitif.</b> Guru membaca Panduan L.4 lebih dulu.</p>':''}`;
+  const body=`<dl class="inf">${R.map(([k,v])=>`<div><dt>${k}</dt><dd>${esc(v)}</dd></div>`).join('')}</dl>${u.sensitif?`<p class="sensn"><b>Episode sensitif.</b>${Sess.role()==='guru'?' Baca Panduan L.4 lebih dulu.':''}</p>`:''}`;
   if(matchMedia('(max-width:899px) and (pointer:coarse)').matches){sheet('Unit '+u.id,`<div class="infb">${body}</div>`);return}
   ov.removeAttribute('style');ov.className='ov';
   ov.innerHTML=`<div class="box inf" role="dialog" aria-modal="true" aria-label="Info unit ${u.id}"><div class="ih"><h3>Unit ${u.id}</h3><button type="button" class="ghost" id="ix">Tutup</button></div>${body}</div>`;
   $('#ix').onclick=closeOv;$('#ix').focus()}
 const SEC=['Pemantik','Kehidupan sehari-hari','Kartu tokoh','Peristiwa','Galeri sumber','Bandingkan sumber','Apa kata buku teks?','Refleksi dan cek pemahaman'];
-function viewUnit(id){const u=UNITS.find(x=>x.id===id);if(!u){location.hash='#beranda';return}
+function viewUnit(id){const u=UNITS.find(x=>x.id===id);if(!u){location.hash='#beranda';return}const GURU=Sess.role()==='guru';
   renderNav('unit-'+u.id);const N=state.notes[u.id]=state.notes[u.id]||{},prev=UNITS.find(x=>x.id===id-1),next=UNITS.find(x=>x.id===id+1),used=new Set();
   const S=(n,b)=>`<section class="sec rv" id="s${n}" data-s="${n}"><h2><i class="seal">${u.id}.${n}</i>${SEC[n-1]}</h2>${b}</section>`;
   const sb=k=>Sess.syncs()?`<div class="sub" data-sub="${k}"><button type="button" class="send" data-send="${k}"></button><span class="st"></span></div><div class="fbk" data-fb="${k}"></div>`:'';
-  const ta=(k,lab,v)=>`<div class="qa"><label for="t-${k}">${lab}</label><textarea id="t-${k}" data-k="${k}">${esc(v||'')}</textarea><div class="cnt"><span data-c="${k}"></span></div>${sb(k)}</div>`;
+  const ta=(k,lab,v)=>GURU?(k==='pemantik'?'':`<div class="qa gq"><p class="gql">${lab}</p></div>`):`<div class="qa"><label for="t-${k}">${lab}</label><textarea id="t-${k}" data-k="${k}">${esc(v||'')}</textarea><div class="cnt"><span data-c="${k}"></span></div>${sb(k)}</div>`;
   const jn=[...new Set(u.galeri.map(g=>g.jenis))];
   const bt=u.bukuteks.split(/(?=Yang (?:belum disebut|perlu dipastikan ada):)/);
   const sehariKey=u.cek||[];
   app.innerHTML=`<div class="ulay"><aside class="toc" aria-label="Isi unit"><div class="prog"><i id="tp"></i></div><ol>${SEC.map((s,i)=>`<li><button type="button" class="ghost" data-go="${i+1}"><span>${u.id}.${i+1}</span><span>${s}</span></button></li>`).join('')}</ol></aside>
-  <article><p class="meta pm">Unit ${u.id} · ${esc(u.bab)} · ${esc(u.periode)} · waktu baca ${esc(u.waktu)}${u.sensitif?' · <b>episode sensitif, guru membaca Panduan L.4 lebih dulu</b>':''}</p>
+  <article><p class="meta pm">Unit ${u.id} · ${esc(u.bab)} · ${esc(u.periode)} · waktu baca ${esc(u.waktu)}${u.sensitif?(GURU?' · <b>episode sensitif, baca Panduan L.4 lebih dulu</b>':' · <b>episode sensitif</b>'):''}</p>
   <h1 class="ut">${esc(u.judul)}<button type="button" class="ibtn" id="uinfo" aria-haspopup="dialog" aria-label="Info unit ${u.id}"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v5.2M12 7.7v.1"/></svg></button>${u.sensitif?'<span class="sens">Sensitif</span>':''}</h1>
   ${S(1,`<div class="pemantik"><div class="media">${media(ASET_PEMANTIK[u.id],u.pemantik.gambar,u.pemantik.gambar,'Foto')}</div><p class="q">${T(u.pemantik.teks)}</p></div>${ta('pemantik','Jawaban sementaraku',N.pemantik)}`)}
   ${S(2,u.sehari.map(p=>`<p>${TG(p,used)}</p>`).join(''))}
@@ -155,8 +156,8 @@ function viewUnit(id){const u=UNITS.find(x=>x.id===id);if(!u){location.hash='#be
   ${S(5,`<div class="chips" role="group" aria-label="Filter jenis sumber"><button class="ghost" aria-pressed="true" data-f="">Semua</button>${jn.map(j=>`<button class="ghost" aria-pressed="false" data-f="${esc(j)}">${esc(j)}</button>`).join('')}</div><div class="gal">${u.galeri.map((g,i)=>`<figure data-j="${esc(g.jenis)}"><div class="m">${media((ASET_GALERI[u.id]||[])[i],g.judul,g.jenis+': '+g.judul,g.jenis)}</div><figcaption><em>${esc(g.jenis)}</em><b>${T(g.judul)}</b><span>${T(g.ket)}</span></figcaption></figure>`).join('')}</div>`)}
   ${S(6,`<div class="banding"><div class="sumber"><h4>${T(u.banding.a.judul)}</h4><p>${T(u.banding.a.isi)}</p></div><div class="sumber b"><h4>${T(u.banding.b.judul)}</h4><p>${T(u.banding.b.isi)}</p></div></div>${u.banding.tanya.map((t,i)=>ta('q'+i,`${i+1}. ${esc(t)}`,N['q'+i])).join('')}`)}
   ${S(7,bt.length>1?`<div class="bt"><div class="a">${T(bt[0])}</div><div class="b">${T(bt[1])}</div></div>`:`<div class="callout"><p style="margin:0">${T(u.bukuteks)}</p></div>`)}
-  ${S(8,`${ta('refleksi','Refleksi: '+esc(u.refleksi),N.refleksi)}<h3>Cek pemahaman</h3>${u.cek.map((c,i)=>`<div class="cek"><p>${i+1}. ${esc(c.q)}</p><textarea data-k="c${i}" aria-label="Jawaban ${i+1}" style="min-height:56px">${esc(N['c'+i]||'')}</textarea>${sb('c'+i)}<div class="btnrow" style="margin:8px 0 0"><button class="ghost" data-key="${i}" aria-expanded="false">Lihat kunci</button></div><div class="kunci hidden"><b>Kunci:</b> ${esc(c.k)}</div></div>`).join('')}<h3>Rujukan unit</h3><ul class="rujukan">${u.rujukan.map(r=>`<li>${esc(r)}</li>`).join('')}</ul>`)}
-  <div class="btnrow"><button id="selesai">${state.done[u.id]?'Unit ditandai selesai (klik untuk membatalkan)':'Tandai unit selesai'}</button>${prev?`<a class="btn ghost" href="#unit-${prev.id}">← Unit ${prev.id}</a>`:''}${next?`<a class="btn ghost" href="#unit-${next.id}">Unit ${next.id} →</a>`:`<a class="btn ghost" href="#beranda">Kembali ke peta modul</a>`}<a class="btn ghost" href="pdf/unit-${u.id}.pdf" download>Unduh PDF unit ini</a><span class="saved" id="saved"></span></div></article></div>`;
+  ${S(8,`${ta('refleksi','Refleksi: '+esc(u.refleksi),N.refleksi)}<h3>Cek pemahaman</h3>${u.cek.map((c,i)=>`<div class="cek"><p>${i+1}. ${esc(c.q)}</p>${GURU?'':`<textarea data-k="c${i}" aria-label="Jawaban ${i+1}" style="min-height:56px">${esc(N['c'+i]||'')}</textarea>${sb('c'+i)}<div class="btnrow" style="margin:8px 0 0"><button class="ghost" data-key="${i}" aria-expanded="false">Lihat kunci</button></div>`}<div class="kunci${GURU?'':' hidden'}"><b>Kunci:</b> ${esc(c.k)}</div></div>`).join('')}<h3>Rujukan unit</h3><ul class="rujukan">${u.rujukan.map(r=>`<li>${esc(r)}</li>`).join('')}</ul>`)}
+  <div class="btnrow">${GURU?'':`<button id="selesai">${state.done[u.id]?'Unit ditandai selesai (klik untuk membatalkan)':'Tandai unit selesai'}</button>`}${prev?`<a class="btn ghost" href="#unit-${prev.id}">← Unit ${prev.id}</a>`:''}${next?`<a class="btn ghost" href="#unit-${next.id}">Unit ${next.id} →</a>`:`<a class="btn ghost" href="#beranda">Kembali ke peta modul</a>`}<a class="btn ghost" href="pdf/unit-${u.id}.pdf" download>Unduh PDF unit ini</a>${GURU?'':'<span class="saved" id="saved"></span>'}</div></article></div>`;
   const cnt=t=>{const c=$(`[data-c="${t.dataset.k}"]`);if(c)c.textContent=(t.value.trim()?t.value.trim().split(/\s+/).length:0)+' kata'};
   /* kirim jawaban + umpan balik guru */
   const SN=state.sent[u.id]=state.sent[u.id]||{},K=$$('[data-sub]',app).map(w=>w.dataset.sub);let FB=Sess.fb();
@@ -172,15 +173,15 @@ function viewUnit(id){const u=UNITS.find(x=>x.id===id);if(!u){location.hash='#be
     const old=SN[k],st=$(`[data-sub="${k}"] .st`,app);SN[k]={t:d,at:Date.now()};
     try{await busy(b,Sess.flush(),'Mengirim…');paint(k)}
     catch(x){if(old)SN[k]=old;else delete SN[k];paint(k);if(st)st.textContent='Gagal mengirim: '+x.message}});
-  $$('textarea',app).forEach(t=>{cnt(t);t.addEventListener('input',()=>{N[t.dataset.k]=t.value;save();cnt(t);paint(t.dataset.k);$('#saved').textContent=Sess.msg()})});
+  $$('textarea',app).forEach(t=>{cnt(t);t.addEventListener('input',()=>{N[t.dataset.k]=t.value;save();cnt(t);paint(t.dataset.k);const sv0=$('#saved');if(sv0)sv0.textContent=Sess.msg()})});
   $$('[data-key]',app).forEach(b=>b.onclick=()=>{const k=b.closest('.cek').querySelector('.kunci'),h=k.classList.toggle('hidden');b.textContent=h?'Lihat kunci':'Sembunyikan kunci';b.setAttribute('aria-expanded',!h)});
   $$('[data-f]',app).forEach(b=>b.onclick=()=>{$$('[data-f]',app).forEach(x=>x.setAttribute('aria-pressed',x===b));$$('figure',app).forEach(f=>f.classList.toggle('hidden',!!b.dataset.f&&f.dataset.j!==b.dataset.f))});
-  $('#selesai').onclick=()=>{const y=window.pageYOffset,r=document.documentElement,o=r.style.scrollBehavior;state.done[u.id]=!state.done[u.id];save();viewUnit(id);r.style.scrollBehavior='auto';scrollTo(0,y);r.style.scrollBehavior=o};
+  const sl=$('#selesai');if(sl)sl.onclick=()=>{const y=window.pageYOffset,r=document.documentElement,o=r.style.scrollBehavior;state.done[u.id]=!state.done[u.id];save();viewUnit(id);r.style.scrollBehavior='auto';scrollTo(0,y);r.style.scrollBehavior=o};
   $('#uinfo').onclick=()=>infoUnit(u);
   /* daftar isi + scrollspy */
   const seen=state.seen[u.id]=state.seen[u.id]||{},tb=$$('.toc [data-go]',app),mark=()=>{tb.forEach(b=>b.classList.toggle('seen',!!seen[b.dataset.go]));$('#tp').style.transform='scaleX('+Object.keys(seen).length/8+')'};mark();
   tb.forEach(b=>b.onclick=()=>$('#s'+b.dataset.go).scrollIntoView({behavior:'smooth'}));
-  if(spy)spy.disconnect();spy=new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting){const n=e.target.dataset.s;tb.forEach(b=>{const on=b.dataset.go===n;b.classList.toggle('on',on);if(on)ctr(b)});if(!seen[n]){seen[n]=1;save();mark()}}}),{rootMargin:'-30% 0px -60% 0px'});$$('.sec',app).forEach(s=>spy.observe(s));
+  if(spy)spy.disconnect();spy=new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting){const n=e.target.dataset.s;tb.forEach(b=>{const on=b.dataset.go===n;b.classList.toggle('on',on);if(on)ctr(b)});if(!GURU&&!seen[n]){seen[n]=1;save();mark()}}}),{rootMargin:'-30% 0px -60% 0px'});$$('.sec',app).forEach(s=>spy.observe(s));
   after(true)}
 
 /* ---------- glosarium, tokoh ---------- */
@@ -234,8 +235,8 @@ function viewPeriksa(){renderNav('');const dr=[],as=[];
 /* ---------- daftar unit (halaman sendiri, dipakai di seluler) ---------- */
 function viewUnitList(){renderNav('unit');
   const nd=Object.keys(state.done).filter(k=>state.done[k]).length;
-  app.innerHTML=`<h1>Daftar unit</h1><p class="meta">${nd}/${UNITS.length} unit selesai</p><div class="ulist">${UNITS.map(u=>{const sn=Object.keys((state.seen||{})[u.id]||{}).length,d=state.done[u.id],p=d?100:Math.round(Math.min(sn,8)/8*90);
-    return `<a class="uc ${d?'done':''}" href="#unit-${u.id}"><i>${u.id}</i><span><b>${esc(u.judul.split(':')[0])}</b><small>${esc(u.periode)} · ${esc(u.waktu)}${u.sensitif?' · episode sensitif':''}</small><span class="upb"><u style="width:${p}%"></u></span></span><em>${d?'Selesai':sn?p+'%':''}</em></a>`}).join('')}</div>`;after(false)}
+  app.innerHTML=`<h1>Daftar unit</h1>${Sess.role()==='guru'?'':`<p class="meta">${nd}/${UNITS.length} unit selesai</p>`}<div class="ulist">${UNITS.map(u=>{const G=Sess.role()==='guru',sn=G?0:Object.keys((state.seen||{})[u.id]||{}).length,d=!G&&state.done[u.id],p=d?100:Math.round(Math.min(sn,8)/8*90);
+    return `<a class="uc ${d?'done':''}" href="#unit-${u.id}"><i>${u.id}</i><span><b>${esc(u.judul.split(':')[0])}</b><small>${esc(u.periode)} · ${esc(u.waktu)}${u.sensitif?' · episode sensitif':''}</small>${G?'':`<span class="upb"><u style="width:${p}%"></u></span>`}</span><em>${d?'Selesai':sn?p+'%':''}</em></a>`}).join('')}</div>`;after(false)}
 
 let curH=null;
 function dispatch(h){closeOv();Sess.paint();
@@ -246,7 +247,7 @@ function dispatch(h){closeOv();Sess.paint();
 function viewLainnya(){renderNav('lainnya');const u=Sess.user(),role=Sess.role();
   const acct=u?`<div class="lcard"><div class="av pf">${PFP}</div><div class="lwho"><b>${esc(u.nama)}</b><small>${role==='guru'?'Guru · '+esc(u.email):'Murid · NIS '+esc(u.nis)}</small>${u.kelas?`<small>Kode kelas ${esc(u.kelas)}</small>`:''}</div><button class="ghost" id="lOut">Keluar</button></div>`
    :`<div class="lcard"><div class="av pf">${PFP}</div><div class="lwho"><b>Tamu</b><small>Progres hanya tersimpan di peramban ini.</small></div><button id="lIn">Masuk</button></div>`;
-  const guru=role!=='murid'?`<h2 class="lh">Untuk guru</h2><div class="lgrp"><a class="si" href="#panduan-guru"><span><b>Panduan guru</b><small>Skenario, rubrik, episode sensitif</small></span></a>${role==='guru'?`<a class="si" href="#dasbor"><span><b>Dasbor</b><small>Pantau progres kelas</small></span></a>`:''}</div>`:'';
+  const guru=role==='guru'?`<h2 class="lh">Untuk guru</h2><div class="lgrp"><a class="si" href="#panduan-guru"><span><b>Panduan guru</b><small>Skenario, rubrik, episode sensitif</small></span></a>${role==='guru'?`<a class="si" href="#dasbor"><span><b>Dasbor</b><small>Pantau progres kelas</small></span></a>`:''}</div>`:'';
   app.innerHTML=`<h1>Lainnya</h1><button type="button" class="msearch lsearch" id="mSearch"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="M16 16l5 5"/></svg>Cari unit, tokoh, atau istilah</button>
   <h2 class="lh">Akun</h2>${acct}${guru}<h2 class="lh">Tentang modul</h2><div class="lgrp"><p class="abt">E-modul suplemen Sejarah kelas XI (Fase F) · 6 unit inti + 1 unit lanjutan · prototipe</p></div><h2 class="lh">Tampilan</h2><div class="lgrp"><div class="pop lpop" id="lPref"></div></div>`;
   const lo=$('#lOut'),li=$('#lIn');if(lo)lo.onclick=Sess.out;if(li)li.onclick=()=>Sess.go('masuk');
