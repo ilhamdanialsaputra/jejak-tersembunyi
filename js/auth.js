@@ -6,12 +6,12 @@
 /* siluet profil kosong (bukan huruf depan) */
 const PFP='<svg class="pf" viewBox="0 0 24 24" aria-hidden="true"><circle class="pbg" cx="12" cy="12" r="12"/><circle class="pfg" cx="12" cy="9.3" r="4"/><path class="pfg" d="M4.6 20.6c.7-4 3.6-6.3 7.4-6.3s6.7 2.3 7.4 6.3a11.9 11.9 0 0 1-14.8 0z"/></svg>';
 const Sess=(()=>{
-  let user=null,timer=null;const G='jejak-guest';
+  let user=null,timer=null,fb={};const G='jejak-guest';
   const api={
     user:()=>user,role:()=>user&&user.role,
     guest:()=>sessionStorage.getItem(G)==='1',
     syncs:()=>!!user&&user.role==='murid',
-    async init(){try{user=await Store.auth.current()}catch(e){user=null}return api.syncs()?Store.progress.load(user.uid):null},
+    async init(){user=await Store.auth.current();return api.syncs()?Store.progress.load(user.uid):null},
     /* aturan akses: kembalikan hash tujuan bila halaman tidak boleh dibuka */
     gate(h){
       if(!user&&!api.guest())return h==='masuk'?null:'masuk';
@@ -24,11 +24,15 @@ const Sess=(()=>{
       const st=()=>document.getElementById('saved');if(st())st().textContent='Menyimpan…';
       timer=setTimeout(async()=>{try{await Store.progress.save(user.uid,state);if(st())st().textContent='Tersimpan ke akunmu'}
         catch(e){if(st())st().textContent='Gagal menyimpan. Periksa koneksi.'}},700)},
+    /* kirim sekarang (dipakai tombol Kirim jawaban); gagal bila lebih dari 20 detik */
+    async flush(){clearTimeout(timer);await Store.progress.save(user.uid,state);const st=document.getElementById('saved');if(st)st.textContent='Tersimpan ke akunmu'},
+    fb:()=>fb,
+    async loadFb(){if(!api.syncs())return fb;try{fb=await Store.feedback.load(user.uid)}catch(e){}return fb},
     msg:()=>api.syncs()?'Menyimpan…':'Tersimpan di peramban ini',
     go(t){location.hash==='#'+t?route():location.hash='#'+t},
     async enter(u){user=u;sessionStorage.removeItem(G);
       setState(api.syncs()?await Store.progress.load(u.uid):ld(KEY,{}));api.go(u.role==='guru'?'dasbor':'beranda')},
-    async out(){await Store.auth.logout();user=null;sessionStorage.removeItem(G);setState(ld(KEY,{}));closeOv();api.go('masuk')},
+    async out(){await Store.auth.logout();user=null;fb={};sessionStorage.removeItem(G);setState(ld(KEY,{}));closeOv();api.go('masuk')},
     guestGo(){sessionStorage.setItem(G,'1');api.go('beranda')},
     paint(){const b=document.getElementById('bAcc');if(!b)return;
       document.body.classList.toggle('is-auth',(location.hash||'').slice(1)==='masuk');
@@ -74,9 +78,9 @@ function viewMasuk(){
     box.querySelectorAll('[data-r]').forEach(b=>b.onclick=()=>{role=b.dataset.r;draw()});
     $('#gs').onclick=Sess.guestGo;
     $('#fm').onsubmit=async e=>{e.preventDefault();const f=e.target,v=Object.fromEntries(new FormData(f)),bt=f.querySelector('.full'),er=$('#er');
-      bt.disabled=true;er.textContent='';
-      try{const u=L?await Store.auth.login({id:v.id,password:v.pw}):M?await Store.auth.registerStudent({nama:v.nama,nis:v.nis,kode:v.kode,password:v.pw}):await Store.auth.registerTeacher({nama:v.nama,email:v.email,kelas:v.kelas,password:v.pw});
-        await Sess.enter(u)}catch(x){er.textContent=x.message;bt.disabled=false;f.animate([{transform:'translateX(0)'},{transform:'translateX(-6px)'},{transform:'translateX(6px)'},{transform:'none'}],{duration:260})}};
+      er.textContent='';
+      try{await busy(bt,(async()=>{const u=L?await Store.auth.login({id:v.id,password:v.pw}):M?await Store.auth.registerStudent({nama:v.nama,nis:v.nis,kode:v.kode,password:v.pw}):await Store.auth.registerTeacher({nama:v.nama,email:v.email,kelas:v.kelas,password:v.pw});
+        await Sess.enter(u)})(),L?'Memeriksa…':'Membuat akun…')}catch(x){er.textContent=x.message;f.animate([{transform:'translateX(0)'},{transform:'translateX(-6px)'},{transform:'translateX(6px)'},{transform:'none'}],{duration:260})}};
     if(box.animate)box.querySelector('form').animate([{opacity:0,transform:'translateY(8px)'},{opacity:1,transform:'none'}],{duration:320,easing:'cubic-bezier(.2,.7,.2,1)'});
   };
   draw();after(true);
@@ -87,17 +91,22 @@ const rel=t=>{if(!t)return'Belum pernah';const s=(Date.now()-t)/1e3;
   if(s<90)return'Baru saja';if(s<3600)return Math.round(s/60)+' menit lalu';if(s<86400)return Math.round(s/3600)+' jam lalu';
   if(s<604800)return Math.round(s/86400)+' hari lalu';return new Date(t).toLocaleDateString('id-ID',{day:'numeric',month:'short'})};
 const wc=v=>{v=String(v||'').trim();return v?v.split(/\s+/).length:0};
+const sentOf=(p,id)=>Object.fromEntries(Object.entries(((p&&p.sent)||{})[id]||{}).map(([k,v])=>[k,v.t]));
 function calc(p){
-  const rows=UNITS.map(u=>{const seen=Object.keys((p.seen||{})[u.id]||{}).length,N=(p.notes||{})[u.id]||{},ks=Object.keys(N).filter(k=>wc(N[k]));
+  const rows=UNITS.map(u=>{const seen=Object.keys((p.seen||{})[u.id]||{}).length,N=sentOf(p,u.id),ks=Object.keys(N).filter(k=>wc(N[k]));
     const done=!!(p.done||{})[u.id];return{id:u.id,seen,done,ans:ks.length,words:ks.reduce((a,k)=>a+wc(N[k]),0),st:done?2:(seen||ks.length?1:0)}});
   return{rows,pct:Math.round(rows.reduce((a,r)=>a+(r.done?1:Math.min(r.seen,8)/8*.9),0)/rows.length*100),
     doneN:rows.filter(r=>r.done).length,ans:rows.reduce((a,r)=>a+r.ans,0),words:rows.reduce((a,r)=>a+r.words,0),last:p.updated||0}
 }
-async function viewDasbor(){
+async function viewDasbor(soft){
   renderNav('dasbor');const me=Sess.user();
-  app.innerHTML='<div class="dash"><p class="meta">Memuat dasbor…</p></div>';after(true);
-  const info=await Store.teacher.classInfo(me.kelas)||{nama:'Kelas',kode:me.kelas};
-  let R=(await Store.teacher.roster(me.kelas)).map(r=>({...r,c:calc(r.progress)}));
+  if(!soft){app.innerHTML='<div class="dash"><p class="meta"><i class="spin"></i>Memuat dasbor…</p></div>';after(true)}
+  let info,R;
+  try{info=await Store.teacher.classInfo(me.kelas)||{nama:'Kelas',kode:me.kelas};
+    R=(await Store.teacher.roster(me.kelas)).map(r=>({...r,c:calc(r.progress)}))}
+  catch(x){if(location.hash!=='#dasbor')return;
+    if(soft){const u=$('#upd');if(u)u.textContent='Gagal memuat: '+x.message;return}
+    app.innerHTML='<div class="dash"><p class="meta">Gagal memuat dasbor. '+esc(x.message)+'</p><button id="rt">Coba lagi</button></div>';$('#rt').onclick=()=>viewDasbor();return}
   if(location.hash!=='#dasbor')return;
   const n=R.length,avg=n?Math.round(R.reduce((a,r)=>a+r.c.pct,0)/n):0,act=R.filter(r=>Date.now()-r.c.last<6048e5&&r.c.last).length,ans=R.reduce((a,r)=>a+r.c.ans,0);
   const kpi=(l,v,s)=>`<div class="kpi"><span>${l}</span><b>${v}</b><small>${s}</small></div>`;
@@ -106,7 +115,7 @@ async function viewDasbor(){
     return`<div class="ub"><div class="un"><b>Unit ${u.id}</b><span>${esc(short(u.judul))}</span></div><div class="tr"><i data-w="${d}"></i></div><em>${d}%</em></div>`}).join('');
   const risk=R.filter(r=>!r.c.last||Date.now()-r.c.last>6048e5||r.c.pct<20).sort((a,b)=>a.c.last-b.c.last).slice(0,5);
   app.innerHTML=`<div class="dash">
-   <header class="dh"><div><p class="meta">Dasbor guru</p><h1>${esc(info.nama)}</h1></div>
+   <header class="dh"><div><p class="meta">Dasbor guru</p><h1>${esc(info.nama)}</h1><p class="meta upd"><span id="upd">Diperbarui pukul ${new Date().toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit'})}</span><button class="ghost rf" id="rf" type="button">Segarkan</button></p></div>
     <div class="kode"><span>Kode kelas untuk murid</span><b id="kd">${esc(info.kode||me.kelas)}</b><button class="ghost" id="cp">Salin</button></div></header>
    ${n?`<div class="kpis">${kpi('Murid terdaftar',n,'di kelas ini')}${kpi('Rata-rata progres',avg+'%','dari tujuh unit')}${kpi('Aktif 7 hari terakhir',act+'<i>/'+n+'</i>','murid')}${kpi('Jawaban terkumpul',ans,'pemantik, refleksi, cek')}</div>
    <div class="dgrid"><section class="panel"><h3>Ketuntasan per unit</h3>${unitBars}</section>
@@ -117,6 +126,7 @@ async function viewDasbor(){
    :`<section class="panel empty"><h3>Belum ada murid</h3><p>Bagikan kode kelas <b>${esc(info.kode||me.kelas)}</b> ke murid. Mereka mendaftar lewat tab <b>Daftar</b> sebagai Murid, lalu progresnya muncul di sini.</p>
     ${Store.mode==='lokal'?'<p class="muted">Ingin melihat tampilan dasbor yang terisi?</p><button id="sd">Muat data contoh</button>':''}</section>`}</div>`;
   requestAnimationFrame(()=>$$('.tr i').forEach(i=>i.style.width=i.dataset.w+'%'));
+  $('#rf').onclick=e=>busy(e.currentTarget,viewDasbor(true),'Memuat…');
   const cp=$('#cp');if(cp)cp.onclick=()=>{navigator.clipboard&&navigator.clipboard.writeText(info.kode||me.kelas);cp.textContent='Tersalin';setTimeout(()=>cp.textContent='Salin',1400)};
   const sd=$('#sd');if(sd)sd.onclick=async()=>{await Store.teacher.seedDemo(me.kelas,UNITS);viewDasbor()};
   if(!n)return;
@@ -137,12 +147,20 @@ async function viewDasbor(){
     const csv=[h,...R.map(r=>[r.user.nama,r.user.nis,r.c.pct,r.c.doneN,r.c.words,r.c.last?new Date(r.c.last).toISOString().slice(0,16).replace('T',' '):'',...r.c.rows.map(x=>['belum','sedang','selesai'][x.st])])].map(a=>a.map(q).join(',')).join('\n');
     const a=document.createElement('a');a.href=URL.createObjectURL(new Blob(['\ufeff'+csv],{type:'text/csv'}));a.download='progres-'+(info.kode||'kelas')+'.csv';a.click();setTimeout(()=>URL.revokeObjectURL(a.href),2e3)};
 }
-function detail(r){
+async function detail(r){
+  ov.className='ov';ov.innerHTML='<div class="box det"><p class="meta" style="padding:24px"><i class="spin"></i>Memuat jawaban…</p></div>';
+  let FBK={};try{FBK=await Store.feedback.load(r.user.uid)}catch(e){}
+  if(ov.classList.contains('hidden'))return;
   const rank=k=>k==='pemantik'?0:/^q/.test(k)?1:k==='refleksi'?2:3,
     lab=(u,k)=>k==='pemantik'?'Pemantik, jawaban sementara':k==='refleksi'?'Refleksi: '+u.refleksi:/^q\d+$/.test(k)?'Bandingkan sumber: '+(u.banding.tanya[+k.slice(1)]||k):/^c\d+$/.test(k)?'Cek pemahaman: '+((u.cek[+k.slice(1)]||{}).q||k):k;
-  const body=UNITS.map((u,i)=>{const x=r.c.rows[i],N=(r.progress.notes||{})[u.id]||{},ks=Object.keys(N).filter(k=>wc(N[k])).sort((a,b)=>rank(a)-rank(b)||a.localeCompare(b));
+  const body=UNITS.map((u,i)=>{const x=r.c.rows[i],N=sentOf(r.progress,u.id),SA=((r.progress.sent||{})[u.id]||{}),ks=Object.keys(N).filter(k=>wc(N[k])).sort((a,b)=>rank(a)-rank(b)||a.localeCompare(b));
     return`<details><summary><span class="hc s${x.st}"></span><b>Unit ${u.id}</b><em>${['Belum mulai','Sedang dibaca','Selesai'][x.st]} · ${x.seen}/8 bagian · ${x.ans} jawaban</em></summary>
-      ${ks.length?ks.map(k=>`<div class="ans"><small>${esc(lab(u,k))}</small><p>${esc(N[k])}</p></div>`).join(''):'<p class="muted">Belum ada jawaban.</p>'}</details>`}).join('');
+      ${ks.length?ks.map(k=>{const id=u.id+'_'+k,f=FBK[id];return`<div class="ans"><small>${esc(lab(u,k))} · dikirim ${rel(SA[k]&&SA[k].at)}</small><p>${esc(N[k])}</p><div class="fbw"><textarea data-fbk="${id}" aria-label="Umpan balik" placeholder="Tulis umpan balik untuk murid…">${esc(f&&f.t||'')}</textarea><div class="btnrow"><button type="button" class="ghost" data-sfb="${id}">${f&&f.t?'Perbarui umpan balik':'Kirim umpan balik'}</button><span class="st">${f&&f.t?'Terkirim '+rel(f.at).toLowerCase():''}</span></div></div></div>`}).join(''):'<p class="muted">Belum ada jawaban yang dikirim.</p>'}</details>`}).join('');
   ov.className='ov';ov.innerHTML=`<div class="box det"><div class="dt"><span class="av">${esc(ini(r.user.nama))}</span><div><h3>${esc(r.user.nama)}</h3><p class="meta">NIS ${esc(r.user.nis)} · ${r.c.pct}% · terakhir aktif ${rel(r.c.last)}</p></div><button class="ghost" id="dx" aria-label="Tutup">Tutup</button></div><div class="dbody">${body}</div></div>`;
   $('#dx').onclick=closeOv;ov.onclick=e=>{if(e.target===ov)closeOv()};
+  $('.dbody',ov).onclick=async e=>{const b=e.target.closest('[data-sfb]');if(!b)return;
+    const id=b.dataset.sfb,ta=$(`[data-fbk="${id}"]`,ov),st=b.parentNode.querySelector('.st'),v=ta.value.trim();
+    st.textContent='';
+    try{await busy(b,Store.feedback.save(r.user.uid,id,v,Sess.user().nama),'Mengirim…');st.textContent='Terkirim ke murid';b.textContent=v?'Perbarui umpan balik':'Kirim umpan balik'}
+    catch(x){st.textContent='Gagal: '+x.message}};
 }
