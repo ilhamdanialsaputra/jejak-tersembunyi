@@ -50,7 +50,7 @@ document.addEventListener('click',e=>{const p=$('#setPop');if(!p.classList.conta
   const im=e.target.closest('img');if(im&&im.closest('.media,figure')&&!im.closest('.potret'))lightbox(im)});
 
 /* ---------- overlay: pencarian dan lightbox ---------- */
-const ov=$('#ov');const closeOv=()=>{ov.classList.add('hidden');ov.className='ov hidden';ov.innerHTML='';ov.removeAttribute('style')};
+const ov=$('#ov');const closeOv=()=>{ov.classList.add('hidden');ov.className='ov hidden';ov.innerHTML='';ov.removeAttribute('style');ov.onclick=null};
 /* saat overlay/lembar aktif, halaman di belakangnya dikunci (mobile) */
 new MutationObserver(()=>document.documentElement.classList.toggle('ovlock',!ov.classList.contains('hidden'))).observe(ov,{attributes:true,attributeFilter:['class']});
 ov.addEventListener('click',e=>{if(e.target===ov||ov.classList.contains('lb')){ov.classList.contains('sh')?closeSheet():closeOv()}});
@@ -77,10 +77,10 @@ function closeSheet(){const box=$('.box.sheet',ov);if(!box||!ov.classList.contai
   setTimeout(()=>{delete ov.dataset.closing;closeOv()},360)}
 function dragSheet(){const box=$('.box.sheet',ov),gh=$('.gh',box);if(!box||!gh)return;let y0=0,dy=0,t0=0,on=false;
   const set=v=>{box.style.transform=v?`translate3d(0,${v}px,0)`:'';ov.style.setProperty('--bd',String(Math.max(0,1-v/Math.max(1,box.offsetHeight))))};
-  gh.addEventListener('pointerdown',e=>{if(ov.dataset.closing||(e.pointerType==='mouse'&&e.button))return;on=true;y0=e.clientY;dy=0;t0=performance.now();box.style.animation='none';box.style.transition='none';ov.classList.add('drag');try{gh.setPointerCapture(e.pointerId)}catch(x){}});
+  gh.addEventListener('pointerdown',e=>{if(ov.dataset.closing||(e.pointerType==='mouse'&&e.button)||e.target.closest('button'))return;on=true;y0=e.clientY;dy=0;t0=performance.now();box.style.animation='none';box.style.transition='none';ov.classList.add('drag');try{gh.setPointerCapture(e.pointerId)}catch(x){}});
   gh.addEventListener('pointermove',e=>{if(!on)return;dy=Math.max(0,e.clientY-y0);set(dy)});
   const end=()=>{if(!on)return;on=false;const dt=Math.max(1,performance.now()-t0),v=dy/dt;
-    if(dy>90||v>.6||(dy<4&&dt<250))closeSheet();else{ov.classList.remove('drag');box.style.transition='transform .38s cubic-bezier(.32,.72,0,1)';set(0)}};
+    if(dy>90||v>.6||(dy<4&&dt<250&&!gh.dataset.notap))closeSheet();else{ov.classList.remove('drag');box.style.transition='transform .38s cubic-bezier(.32,.72,0,1)';set(0)}};
   gh.addEventListener('pointerup',end);gh.addEventListener('pointercancel',end)}
 $('#mnav').addEventListener('click',e=>{const b=e.target.closest('[data-sh]');if(!b)return;
   if(ov.classList.contains('sh')&&!ov.classList.contains('hidden')){closeSheet();return}
