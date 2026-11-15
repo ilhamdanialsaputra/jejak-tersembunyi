@@ -2,13 +2,17 @@
 const KEY='jejak-tersembunyi-v1',PK='jejak-prefs-v1';
 const ld=(k,d)=>{try{return JSON.parse(localStorage.getItem(k))||d}catch(e){return d}};
 const sv=(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}};
-let state=ld(KEY,{});state.done=state.done||{};state.notes=state.notes||{};state.seen=state.seen||{};
+let state=ld(KEY,{});state.done=state.done||{};state.notes=state.notes||{};state.seen=state.seen||{};state.sent=state.sent||{};
 const save=()=>{Sess.syncs()?Sess.push():sv(KEY,state)};
-const setState=s=>{state=Object.assign({done:{},notes:{},seen:{}},s);state.done=state.done||{};state.notes=state.notes||{};state.seen=state.seen||{}};
+const setState=s=>{state=Object.assign({done:{},notes:{},seen:{},sent:{}},s);state.done=state.done||{};state.notes=state.notes||{};state.seen=state.seen||{};state.sent=state.sent||{}};
 let prefs=Object.assign({tema:'auto',ukuran:100,proyektor:false},ld(PK,{}));
 const app=document.getElementById('app'),$=(s,r=document)=>r.querySelector(s),$$=(s,r=document)=>[...r.querySelectorAll(s)];
 const esc=s=>String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 let obs=null,spy=null;
+/* tombol sibuk: tampilkan spinner selama promise berjalan, cegah klik ganda */
+const busy=async(b,p,txt)=>{const o=b.innerHTML;b.disabled=true;b.classList.add('busy');b.setAttribute('aria-busy','true');
+  b.innerHTML='<i class="spin"></i>'+(txt||o);
+  try{return await p}finally{b.classList.remove('busy');b.removeAttribute('aria-busy');b.innerHTML=o;b.disabled=false}};
 
 /* ---------- teks: istilah glosarium + penanda draf ---------- */
 const GLR=new RegExp('\\b('+GLOSARIUM.map(g=>g[0].replace(/[.*+?^${}()|[\]\\]/g,'\\$&')).sort((a,b)=>b.length-a.length).join('|')+')\\b','gi');
@@ -119,7 +123,7 @@ function viewHome(){renderNav('beranda');
   <h2 class="rv">Tujuan pembelajaran</h2>
   <p class="rv">Setelah menyelesaikan setiap unit, siswa dapat (1) menyebutkan sekurang-kurangnya dua tokoh atau kelompok etnis Tionghoa yang terlibat beserta tindakannya; (2) menjelaskan konteks sosial sehari-hari yang melatari peristiwa; (3) membandingkan dua sumber tentang peristiwa yang sama dan menyimpulkan apa yang tidak dapat ditunjukkan tiap sumber; (4) mengidentifikasi apa yang belum disebut buku teks; (5) menunjukkan sikap menghargai kontribusi kelompok yang berbeda dalam sejarah bangsa.</p>
   <div class="btnrow"><a class="btn" href="#unit-1">Mulai dari Unit 1</a><button class="ghost" id="reset">Hapus catatan dan kemajuan</button></div>`;
-  $('#reset').onclick=()=>{if(confirm('Hapus semua catatan refleksi, jawaban, dan tanda selesai di peramban ini?')){state={done:{},notes:{},seen:{}};save();viewHome()}};
+  $('#reset').onclick=()=>{if(confirm('Hapus semua catatan refleksi, jawaban, dan tanda selesai di peramban ini?')){state={done:{},notes:{},seen:{},sent:{}};save();viewHome()}};
   after(false)}
 
 /* ---------- unit ---------- */
@@ -127,7 +131,8 @@ const SEC=['Pemantik','Kehidupan sehari-hari','Kartu tokoh','Peristiwa','Galeri 
 function viewUnit(id){const u=UNITS.find(x=>x.id===id);if(!u){location.hash='#beranda';return}
   renderNav('unit-'+u.id);const N=state.notes[u.id]=state.notes[u.id]||{},prev=UNITS.find(x=>x.id===id-1),next=UNITS.find(x=>x.id===id+1),used=new Set();
   const S=(n,b)=>`<section class="sec rv" id="s${n}" data-s="${n}"><h2><i class="seal">${u.id}.${n}</i>${SEC[n-1]}</h2>${b}</section>`;
-  const ta=(k,lab,v)=>`<div class="qa"><label for="t-${k}">${lab}</label><textarea id="t-${k}" data-k="${k}">${esc(v||'')}</textarea><div class="cnt"><span data-c="${k}"></span></div></div>`;
+  const sb=k=>Sess.syncs()?`<div class="sub" data-sub="${k}"><button type="button" class="send" data-send="${k}"></button><span class="st"></span></div><div class="fbk" data-fb="${k}"></div>`:'';
+  const ta=(k,lab,v)=>`<div class="qa"><label for="t-${k}">${lab}</label><textarea id="t-${k}" data-k="${k}">${esc(v||'')}</textarea><div class="cnt"><span data-c="${k}"></span></div>${sb(k)}</div>`;
   const jn=[...new Set(u.galeri.map(g=>g.jenis))];
   const bt=u.bukuteks.split(/(?=Yang (?:belum disebut|perlu dipastikan ada):)/);
   const sehariKey=u.cek||[];
@@ -141,10 +146,24 @@ function viewUnit(id){const u=UNITS.find(x=>x.id===id);if(!u){location.hash='#be
   ${S(5,`<div class="chips" role="group" aria-label="Filter jenis sumber"><button class="ghost" aria-pressed="true" data-f="">Semua</button>${jn.map(j=>`<button class="ghost" aria-pressed="false" data-f="${esc(j)}">${esc(j)}</button>`).join('')}</div><div class="gal">${u.galeri.map((g,i)=>`<figure data-j="${esc(g.jenis)}"><div class="m">${media((ASET_GALERI[u.id]||[])[i],g.judul,g.jenis+': '+g.judul,g.jenis)}</div><figcaption><em>${esc(g.jenis)}</em><b>${T(g.judul)}</b><span>${T(g.ket)}</span></figcaption></figure>`).join('')}</div>`)}
   ${S(6,`<div class="banding"><div class="sumber"><h4>${T(u.banding.a.judul)}</h4><p>${T(u.banding.a.isi)}</p></div><div class="sumber b"><h4>${T(u.banding.b.judul)}</h4><p>${T(u.banding.b.isi)}</p></div></div>${u.banding.tanya.map((t,i)=>ta('q'+i,`${i+1}. ${esc(t)}`,N['q'+i])).join('')}`)}
   ${S(7,bt.length>1?`<div class="bt"><div class="a">${T(bt[0])}</div><div class="b">${T(bt[1])}</div></div>`:`<div class="callout"><p style="margin:0">${T(u.bukuteks)}</p></div>`)}
-  ${S(8,`${ta('refleksi','Refleksi: '+esc(u.refleksi),N.refleksi)}<h3>Cek pemahaman</h3>${u.cek.map((c,i)=>`<div class="cek"><p>${i+1}. ${esc(c.q)}</p><textarea data-k="c${i}" aria-label="Jawaban ${i+1}" style="min-height:56px">${esc(N['c'+i]||'')}</textarea><div class="btnrow" style="margin:8px 0 0"><button class="ghost" data-key="${i}" aria-expanded="false">Lihat kunci</button></div><div class="kunci hidden"><b>Kunci:</b> ${esc(c.k)}</div></div>`).join('')}<h3>Rujukan unit</h3><ul class="rujukan">${u.rujukan.map(r=>`<li>${esc(r)}</li>`).join('')}</ul>`)}
+  ${S(8,`${ta('refleksi','Refleksi: '+esc(u.refleksi),N.refleksi)}<h3>Cek pemahaman</h3>${u.cek.map((c,i)=>`<div class="cek"><p>${i+1}. ${esc(c.q)}</p><textarea data-k="c${i}" aria-label="Jawaban ${i+1}" style="min-height:56px">${esc(N['c'+i]||'')}</textarea>${sb('c'+i)}<div class="btnrow" style="margin:8px 0 0"><button class="ghost" data-key="${i}" aria-expanded="false">Lihat kunci</button></div><div class="kunci hidden"><b>Kunci:</b> ${esc(c.k)}</div></div>`).join('')}<h3>Rujukan unit</h3><ul class="rujukan">${u.rujukan.map(r=>`<li>${esc(r)}</li>`).join('')}</ul>`)}
   <div class="btnrow"><button id="selesai">${state.done[u.id]?'Unit ditandai selesai (klik untuk membatalkan)':'Tandai unit selesai'}</button>${prev?`<a class="btn ghost" href="#unit-${prev.id}">← Unit ${prev.id}</a>`:''}${next?`<a class="btn ghost" href="#unit-${next.id}">Unit ${next.id} →</a>`:`<a class="btn ghost" href="#beranda">Kembali ke peta modul</a>`}<a class="btn ghost" href="pdf/unit-${u.id}.pdf" download>Unduh PDF unit ini</a><span class="saved" id="saved"></span></div></article></div>`;
   const cnt=t=>{const c=$(`[data-c="${t.dataset.k}"]`);if(c)c.textContent=(t.value.trim()?t.value.trim().split(/\s+/).length:0)+' kata'};
-  $$('textarea',app).forEach(t=>{cnt(t);t.addEventListener('input',()=>{N[t.dataset.k]=t.value;save();cnt(t);$('#saved').textContent=Sess.msg()})});
+  /* kirim jawaban + umpan balik guru */
+  const SN=state.sent[u.id]=state.sent[u.id]||{},K=$$('[data-sub]',app).map(w=>w.dataset.sub);let FB=Sess.fb();
+  const paint=k=>{const w=$(`[data-sub="${k}"]`,app);if(!w)return;const b=$('.send',w),s=$('.st',w),d=(N[k]||'').trim(),x=SN[k],same=x&&x.t===d;
+    if(b.classList.contains('busy'))return;
+    b.disabled=!d||!!same;b.textContent=same?'Terkirim ✓':x?'Kirim pembaruan':'Kirim jawaban';
+    s.textContent=same?'Terkirim · '+rel(x.at).toLowerCase():x?'Ada perubahan yang belum dikirim':d?'Belum dikirim ke guru':''};
+  const paintFb=k=>{const w=$(`[data-fb="${k}"]`,app),f=FB[u.id+'_'+k];if(!w)return;
+    w.innerHTML=f&&f.t?`<b>Umpan balik guru</b><p>${esc(f.t)}</p><small>${rel(f.at)}</small>`:'';w.classList.toggle('on',!!(f&&f.t))};
+  K.forEach(k=>{paint(k);paintFb(k)});
+  Sess.loadFb().then(()=>{FB=Sess.fb();if(location.hash==='#unit-'+id)K.forEach(paintFb)});
+  $$('[data-send]',app).forEach(b=>b.onclick=async()=>{const k=b.dataset.send,d=(N[k]||'').trim();if(!d)return;
+    const old=SN[k],st=$(`[data-sub="${k}"] .st`,app);SN[k]={t:d,at:Date.now()};
+    try{await busy(b,Sess.flush(),'Mengirim…');paint(k)}
+    catch(x){if(old)SN[k]=old;else delete SN[k];paint(k);if(st)st.textContent='Gagal mengirim: '+x.message}});
+  $$('textarea',app).forEach(t=>{cnt(t);t.addEventListener('input',()=>{N[t.dataset.k]=t.value;save();cnt(t);paint(t.dataset.k);$('#saved').textContent=Sess.msg()})});
   $$('[data-key]',app).forEach(b=>b.onclick=()=>{const k=b.closest('.cek').querySelector('.kunci'),h=k.classList.toggle('hidden');b.textContent=h?'Lihat kunci':'Sembunyikan kunci';b.setAttribute('aria-expanded',!h)});
   $$('[data-f]',app).forEach(b=>b.onclick=()=>{$$('[data-f]',app).forEach(x=>x.setAttribute('aria-pressed',x===b));$$('figure',app).forEach(f=>f.classList.toggle('hidden',!!b.dataset.f&&f.dataset.j!==b.dataset.f))});
   $('#selesai').onclick=()=>{state.done[u.id]=!state.done[u.id];save();viewUnit(id)};
@@ -229,7 +248,10 @@ function route(){const h=(location.hash||'#beranda').slice(1),g=Sess.gate(h);
   if(h==='unit'&&!matchMedia('(max-width:899px)').matches){location.hash='#beranda';return}
   const from=curH;curH=h;
   if(from===null)dispatch(h);else Fx.go(from,h,()=>dispatch(h))}
-addEventListener('hashchange',route);applyPrefs();Sess.init().then(s=>{if(s)setState(s);route()});
+addEventListener('hashchange',route);function bootFail(m){app.innerHTML=`<div class="boot"><p>${esc(m)}</p><button type="button" id="rl">Coba lagi</button></div>`;$('#rl').onclick=()=>location.reload()}
+applyPrefs();
+if(typeof Store==='undefined')bootFail('Gagal memuat layanan. Periksa koneksi internet lalu coba lagi.');
+else Sess.init().then(s=>{if(s)setState(s);route()}).catch(x=>bootFail((x&&x.message)||'Tidak dapat terhubung ke server. Periksa koneksi lalu coba lagi.'));
 
 /* ---------- gulir geser (mouse), pudar tepi, tinggi header, pusatkan item aktif ---------- */
 function ctr(el){const sc=el.closest('nav,ol');if(!sc||sc.scrollWidth<=sc.clientWidth+2)return;const a=el.getBoundingClientRect(),b=sc.getBoundingClientRect(),m=48;let d=0;if(a.left<b.left+m)d=a.left-b.left-m;else if(a.right>b.right-m)d=a.right-b.right+m;if(Math.abs(d)>1)sc.scrollTo({left:Math.max(0,sc.scrollLeft+d),behavior:'smooth'})}
