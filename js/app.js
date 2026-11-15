@@ -47,7 +47,8 @@ function setPop(){const p=$('#setPop');const seg=(k,o)=>`<div class="seg">${o.ma
 $('#bSet').onclick=e=>{e.stopPropagation();const p=$('#setPop');const o=p.classList.toggle('hidden');$('#bSet').setAttribute('aria-expanded',!o);if(!o)setPop()};
 document.addEventListener('click',e=>{const p=$('#setPop');if(!p.classList.contains('hidden')&&!e.target.closest('#setPop')){p.classList.add('hidden')}
   const g=e.target.closest('.gl'),tip=$('#tip');if(g){const r=g.getBoundingClientRect();tip.textContent=g.dataset.def;tip.classList.remove('hidden');tip.style.left=Math.max(8,Math.min(innerWidth-310,r.left+scrollX))+'px';tip.style.top=(r.bottom+scrollY+6)+'px'}else tip.classList.add('hidden');
-  const im=e.target.closest('img');if(im&&im.closest('.media,figure')&&!im.closest('.potret'))lightbox(im)});
+  const im=e.target.closest('img');if(im&&(im.closest('.media,figure')||(im.closest('.potret')&&!im.closest('a.card'))))lightbox(im)});
+document.head.insertAdjacentHTML('beforeend','<style>.potret img{cursor:zoom-in}a.card .potret img{cursor:inherit}</style>');
 
 /* ---------- overlay: pencarian dan lightbox ---------- */
 const ov=$('#ov');const closeOv=()=>{ov.classList.add('hidden');ov.className='ov hidden';ov.innerHTML='';ov.removeAttribute('style');ov.onclick=null};
