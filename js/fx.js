@@ -7,8 +7,11 @@ try{history.scrollRestoration='manual'}catch(e){}
 const Fx=(()=>{
   const reduce=()=>matchMedia('(prefers-reduced-motion:reduce)').matches;
   const clear=()=>document.querySelectorAll('[style*="view-transition-name"]').forEach(e=>e.style.viewTransitionName='');
+  const ORD=['glosarium','tokoh','panduan-guru','dasbor','periksa','masuk'];
+  const order=h=>!h||h==='beranda'?0:h==='unit'?.5:h.startsWith('unit-')?+h.slice(5):100+Math.max(0,ORD.indexOf(h));
   function go(a,b,fn){
     if(reduce()||a===b){fn();return}
+    document.documentElement.dataset.dir=order(b)>=order(a)?'f':'b';
     const app=document.getElementById('app');
     if(!document.startViewTransition){fn();app.animate([{opacity:0,transform:'translateY(14px)'},{opacity:1,transform:'none'}],{duration:600,easing:'cubic-bezier(.16,1,.3,1)'});return}
     const l=/^unit-/.test(b)&&app.querySelector(`:is(.peta a,.uc)[href="#${b}"]`),src=l&&l.querySelector('b');
