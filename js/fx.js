@@ -72,12 +72,12 @@ const Fx=(()=>{
   }
 
   /* garis indikator tab yang meluncur dari tab lama ke tab baru */
-  function nav(){
+  function nav(){return;
     const nv=document.getElementById('nav');if(!nv)return;
     const a=nv.querySelector('a.active');let i=nv.querySelector('.ind');
     if(!i){i=document.createElement('i');i.className='ind';nv.appendChild(i)}
     if(!a){i.style.opacity=0;return}
-    const x=a.offsetLeft+14,w=Math.max(8,a.offsetWidth-28);
+    const x=a.offsetLeft+12,w=Math.max(8,a.offsetWidth-24);
     if(pi){i.style.transition='none';i.style.transform=`translateX(${pi.x}px)`;i.style.width=pi.w+'px';i.getBoundingClientRect()}
     i.style.opacity=1;i.style.transition='';i.style.transform=`translateX(${x}px)`;i.style.width=w+'px';pi={x,w};
   }
