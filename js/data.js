@@ -227,7 +227,7 @@ const ASET_PEMANTIK = {
   7:"assets/unit-7/p-7-soe-hok-gie.jpg"
 };
 const ASET_GALERI = {
-  1:["assets/unit-1/1-1-van-der-laan-1741.jpg","assets/unit-1/1-2-demmeni-chineesche-kamp.jpg","assets/unit-1/1-3-peta-batavia-abad-18.jpg",""],
+  1:["assets/unit-1/1-1-van-der-laan-1741.jpg","assets/unit-1/1-2-demmeni-chineesche-kamp.jpg","assets/unit-1/1-3-peta-batavia-abad-18.jpg","https://youtu.be/s5hMVPMOn3c"],
   2:["assets/unit-2/2-1-sekolah-thhk.jpg","assets/unit-2/2-2-sin-po-1920an.jpg","assets/unit-2/2-3-liem-koen-hian-tulisan.jpg","assets/unit-2/2-4-arsip-kong-koan.jpg"],
   3:["assets/unit-3/3-1-kramat-106.jpg","assets/unit-3/3-2-sin-po-10-nov-1928.jpg","assets/unit-3/3-3-indonesia-raya-1927.mp3",""],
   4:["assets/unit-4/4-1-toko-pendudukan.jpg","assets/unit-4/4-2-kung-yung-pao.jpg","assets/unit-4/4-3-nan-sin-1942.jpg",""],
