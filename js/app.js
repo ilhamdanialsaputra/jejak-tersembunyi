@@ -127,6 +127,15 @@ function viewHome(){renderNav('beranda');
   after(false)}
 
 /* ---------- unit ---------- */
+/* info unit: lembar bawah di layar kecil, dialog di desktop */
+function infoUnit(u){
+  const p=u.bab.split(' · '),bab=p[0],hl=p.slice(1).join(' · ');
+  const R=[['Buku teks',bab],...(hl?[[/^hlm\./.test(hl)?'Halaman':'Rujukan',hl.replace(/^hlm\.\s*/,'')]]:[]),['Periode',u.periode],['Waktu baca',u.waktu]];
+  const body=`<dl class="inf">${R.map(([k,v])=>`<div><dt>${k}</dt><dd>${esc(v)}</dd></div>`).join('')}</dl>${u.sensitif?'<p class="sensn"><b>Episode sensitif.</b> Guru membaca Panduan L.4 lebih dulu.</p>':''}`;
+  if(matchMedia('(max-width:899px)').matches){sheet('Unit '+u.id,`<div class="infb">${body}</div>`);return}
+  ov.removeAttribute('style');ov.className='ov';
+  ov.innerHTML=`<div class="box inf" role="dialog" aria-modal="true" aria-label="Info unit ${u.id}"><div class="ih"><h3>Unit ${u.id}</h3><button type="button" class="ghost" id="ix">Tutup</button></div>${body}</div>`;
+  $('#ix').onclick=closeOv;$('#ix').focus()}
 const SEC=['Pemantik','Kehidupan sehari-hari','Kartu tokoh','Peristiwa','Galeri sumber','Bandingkan sumber','Apa kata buku teks?','Refleksi dan cek pemahaman'];
 function viewUnit(id){const u=UNITS.find(x=>x.id===id);if(!u){location.hash='#beranda';return}
   renderNav('unit-'+u.id);const N=state.notes[u.id]=state.notes[u.id]||{},prev=UNITS.find(x=>x.id===id-1),next=UNITS.find(x=>x.id===id+1),used=new Set();
@@ -137,8 +146,8 @@ function viewUnit(id){const u=UNITS.find(x=>x.id===id);if(!u){location.hash='#be
   const bt=u.bukuteks.split(/(?=Yang (?:belum disebut|perlu dipastikan ada):)/);
   const sehariKey=u.cek||[];
   app.innerHTML=`<div class="ulay"><aside class="toc" aria-label="Isi unit"><div class="prog"><i id="tp"></i></div><ol>${SEC.map((s,i)=>`<li><button type="button" class="ghost" data-go="${i+1}"><span>${u.id}.${i+1}</span><span>${s}</span></button></li>`).join('')}</ol></aside>
-  <article><p class="meta">Unit ${u.id} · ${esc(u.bab)} · ${esc(u.periode)} · waktu baca ${esc(u.waktu)}${u.sensitif?' · <b>episode sensitif, guru membaca Panduan L.4 lebih dulu</b>':''}</p>
-  <h1>${esc(u.judul)}</h1>
+  <article><p class="meta pm">Unit ${u.id} · ${esc(u.bab)} · ${esc(u.periode)} · waktu baca ${esc(u.waktu)}${u.sensitif?' · <b>episode sensitif, guru membaca Panduan L.4 lebih dulu</b>':''}</p>
+  <h1 class="ut">${esc(u.judul)}<button type="button" class="ibtn" id="uinfo" aria-haspopup="dialog" aria-label="Info unit ${u.id}"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v5.2M12 7.7v.1"/></svg></button>${u.sensitif?'<span class="sens">Sensitif</span>':''}</h1>
   ${S(1,`<div class="pemantik"><div class="media">${media(ASET_PEMANTIK[u.id],u.pemantik.gambar,u.pemantik.gambar,'Foto')}</div><p class="q">${T(u.pemantik.teks)}</p></div>${ta('pemantik','Jawaban sementaraku',N.pemantik)}`)}
   ${S(2,u.sehari.map(p=>`<p>${TG(p,used)}</p>`).join(''))}
   ${S(3,`<div class="cards">${u.tokoh.map(t=>`<div class="card">${potret(t.nama)}<b>${T(t.nama)}</b><span class="thn">${T(t.tahun)}</span><span class="tn">${T(t.tindakan)}</span><span class="src">Sumber: ${T(t.sumber)}</span></div>`).join('')}</div>`)}
@@ -167,6 +176,7 @@ function viewUnit(id){const u=UNITS.find(x=>x.id===id);if(!u){location.hash='#be
   $$('[data-key]',app).forEach(b=>b.onclick=()=>{const k=b.closest('.cek').querySelector('.kunci'),h=k.classList.toggle('hidden');b.textContent=h?'Lihat kunci':'Sembunyikan kunci';b.setAttribute('aria-expanded',!h)});
   $$('[data-f]',app).forEach(b=>b.onclick=()=>{$$('[data-f]',app).forEach(x=>x.setAttribute('aria-pressed',x===b));$$('figure',app).forEach(f=>f.classList.toggle('hidden',!!b.dataset.f&&f.dataset.j!==b.dataset.f))});
   $('#selesai').onclick=()=>{state.done[u.id]=!state.done[u.id];save();viewUnit(id)};
+  $('#uinfo').onclick=()=>infoUnit(u);
   /* daftar isi + scrollspy */
   const seen=state.seen[u.id]=state.seen[u.id]||{},tb=$$('.toc [data-go]',app),mark=()=>{tb.forEach(b=>b.classList.toggle('seen',!!seen[b.dataset.go]));$('#tp').style.transform='scaleX('+Object.keys(seen).length/8+')'};mark();
   tb.forEach(b=>b.onclick=()=>$('#s'+b.dataset.go).scrollIntoView({behavior:'smooth'}));
