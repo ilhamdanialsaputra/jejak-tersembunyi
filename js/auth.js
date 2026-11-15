@@ -168,17 +168,28 @@ async function viewDasbor(soft){
     catch(x){st.textContent='Gagal: '+x.message}};
 }
 async function detail(r){
-  ov.className='ov';ov.innerHTML='<div class="box det"><p class="meta" style="padding:24px"><i class="spin"></i>Memuat jawaban…</p></div>';
+  const M=matchMedia('(max-width:899px)').matches;
+  const hd=`<span class="av">${esc(ini(r.user.nama))}</span><div><h3>${esc(r.user.nama)}</h3><p class="meta">NIS ${esc(r.user.nis)} · ${r.c.pct}% · terakhir aktif ${rel(r.c.last)}</p></div><button type="button" class="ghost" id="dx" aria-label="Tutup">Tutup</button>`,
+    load='<p class="meta dload"><i class="spin"></i>Memuat jawaban…</p>';
+  /* kerangka dibuat SEKALI; hanya isi .dbody yang diganti setelah data datang, jadi sheet tidak dibuat ulang dan animasinya tidak mengulang */
+  ov.removeAttribute('style');delete ov.dataset.closing;
+  if(M){ov.onclick=null;ov.className='ov sh';
+    ov.innerHTML=`<div class="box sheet dsheet" role="dialog" aria-label="Jawaban ${esc(r.user.nama)}"><div class="gh" data-notap="1"><div class="grab"></div><div class="dt">${hd}</div></div><div class="dbody">${load}</div></div>`;
+    dragSheet();$('#dx').onclick=closeSheet}
+  else{ov.className='ov';
+    ov.innerHTML=`<div class="box det" role="dialog" aria-modal="true" aria-label="Jawaban ${esc(r.user.nama)}"><div class="dt">${hd}</div><div class="dbody">${load}</div></div>`;
+    $('#dx').onclick=closeOv;ov.onclick=e=>{if(e.target===ov)closeOv()}}
+  const dbody=$('.dbody',ov);
   let FBK={};try{FBK=await Store.feedback.load(r.user.uid)}catch(e){}
-  if(ov.classList.contains('hidden'))return;
+  if(!dbody.isConnected)return;
+  let op=0;
   const rank=k=>k==='pemantik'?0:/^q/.test(k)?1:k==='refleksi'?2:3,
     lab=(u,k)=>k==='pemantik'?'Pemantik, jawaban sementara':k==='refleksi'?'Refleksi: '+u.refleksi:/^q\d+$/.test(k)?'Bandingkan sumber: '+(u.banding.tanya[+k.slice(1)]||k):/^c\d+$/.test(k)?'Cek pemahaman: '+((u.cek[+k.slice(1)]||{}).q||k):k;
   const body=UNITS.map((u,i)=>{const x=r.c.rows[i],N=sentOf(r.progress,u.id),SA=((r.progress.sent||{})[u.id]||{}),ks=Object.keys(N).filter(k=>wc(N[k])).sort((a,b)=>rank(a)-rank(b)||a.localeCompare(b));
-    return`<details><summary><span class="hc s${x.st}"></span><b>Unit ${u.id}</b><em>${['Belum mulai','Sedang dibaca','Selesai'][x.st]} · ${x.seen}/8 bagian · ${x.ans} jawaban</em></summary>
+    return`<details${ks.length&&!op&&(op=1)?' open':''}><summary><span class="hc s${x.st}"></span><b>Unit ${u.id}</b><em>${['Belum mulai','Sedang dibaca','Selesai'][x.st]} · ${x.seen}/8 bagian · ${x.ans} jawaban</em></summary>
       ${ks.length?ks.map(k=>{const id=u.id+'_'+k,f=FBK[id];return`<div class="ans"><small>${esc(lab(u,k))} · dikirim ${rel(SA[k]&&SA[k].at)}</small><p>${esc(N[k])}</p><div class="fbw"><textarea data-fbk="${id}" aria-label="Umpan balik" placeholder="Tulis umpan balik untuk murid…">${esc(f&&f.t||'')}</textarea><div class="btnrow"><button type="button" class="ghost" data-sfb="${id}">${f&&f.t?'Perbarui umpan balik':'Kirim umpan balik'}</button><span class="st">${f&&f.t?'Terkirim '+rel(f.at).toLowerCase():''}</span></div></div></div>`}).join(''):'<p class="muted">Belum ada jawaban yang dikirim.</p>'}</details>`}).join('');
-  ov.className='ov';ov.innerHTML=`<div class="box det"><div class="dt"><span class="av">${esc(ini(r.user.nama))}</span><div><h3>${esc(r.user.nama)}</h3><p class="meta">NIS ${esc(r.user.nis)} · ${r.c.pct}% · terakhir aktif ${rel(r.c.last)}</p></div><button class="ghost" id="dx" aria-label="Tutup">Tutup</button></div><div class="dbody">${body}</div></div>`;
-  $('#dx').onclick=closeOv;ov.onclick=e=>{if(e.target===ov)closeOv()};
-  $('.dbody',ov).onclick=async e=>{const b=e.target.closest('[data-sfb]');if(!b)return;
+  dbody.innerHTML=body;
+  dbody.onclick=async e=>{const b=e.target.closest('[data-sfb]');if(!b)return;
     const id=b.dataset.sfb,ta=$(`[data-fbk="${id}"]`,ov),st=b.parentNode.querySelector('.st'),v=ta.value.trim();
     st.textContent='';
     try{await busy(b,Store.feedback.save(r.user.uid,id,v,Sess.user().nama),'Mengirim…');st.textContent='Terkirim ke murid';b.textContent=v?'Perbarui umpan balik':'Kirim umpan balik'}
