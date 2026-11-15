@@ -7,7 +7,6 @@
 .curtain{position:fixed;top:0;left:0;width:100%;height:100vh;height:100lvh;z-index:90;pointer-events:none;display:none;overflow:hidden;contain:layout paint}
 .curtain.on{display:block}
 .curtain i{position:absolute;top:0;left:0;width:100%;height:100%;display:block;transform:translate3d(-101%,0,0);will-change:transform;backface-visibility:hidden}
-@media(hover:none){html.fx{overflow:hidden}}
 .curtain .c1{background:var(--red)}
 .curtain .c2{background:var(--gold)}
 .curtain .c3{background:var(--bg);display:grid;place-items:center}
@@ -105,12 +104,14 @@ button.lnk:hover{background:none;color:var(--red);box-shadow:none;transform:none
 /* ================= MOBILE v5: navigasi bawah, header ramping, tata letak sentuh ================= */
 :root{--mnh:0px}
 .mnav{display:none}
+.msearch{display:none}
 @media(max-width:899px){
  :root{--mnh:58px}
  html{-webkit-tap-highlight-color:transparent;scroll-padding-top:calc(var(--hh) + 56px)}
  a,button,input,textarea,summary,select{touch-action:manipulation}
  input,select,textarea,.find{font-size:16px}
  /* header: satu baris saja; menu pindah ke bilah bawah */
+ header.top{display:none}
  .topin{grid-template-columns:minmax(0,1fr) auto;grid-template-areas:"b t";min-height:52px;column-gap:8px}
  nav.units{display:none}
  .brand{padding:6px 0;gap:10px;font-size:.98rem}
@@ -201,20 +202,41 @@ button.lnk:hover{background:none;color:var(--red);box-shadow:none;transform:none
  body.typing .ov{bottom:0}
  .ov .box.det{height:100%;max-height:100%}
  html.ovlock{overflow:hidden}
- .ov.sh{align-items:flex-end;padding:0;overflow:hidden;touch-action:none;background:rgba(0,0,0,calc(.82*var(--bd,1)))}
- .ov.sh .box{max-width:none;border-radius:16px 16px 0 0;padding:0 0 8px;max-height:100%;overflow:auto;overscroll-behavior:contain;touch-action:pan-y;animation:sheetup .28s var(--ease)}
+ .ov.sh{align-items:flex-end;padding:0;overflow:hidden;touch-action:none;background:transparent;animation:none}
+ .ov.sh::before{content:"";position:absolute;inset:0;background:rgba(0,0,0,.6);opacity:var(--bd,1);animation:scrimin .46s cubic-bezier(.32,.72,0,1);transition:opacity .38s cubic-bezier(.32,.72,0,1)}
+ .ov.sh.drag::before{transition:none;animation:none}
+ .ov.sh .box{position:relative;max-width:none;border-radius:16px 16px 0 0;padding:0 0 8px;max-height:100%;overflow:auto;overscroll-behavior:contain;touch-action:pan-y;animation:sheetin .46s cubic-bezier(.32,.72,0,1);will-change:transform}
  .sh .gh{touch-action:none;cursor:grab;position:sticky;top:0;background:var(--surface);z-index:1;padding:6px 0 2px}
  .sh .grab{width:40px;height:5px;border-radius:5px;background:var(--rule2);margin:6px auto 10px}
  .sh h3{margin:0 20px 8px;font:600 .76rem var(--sans);color:var(--muted);letter-spacing:.06em;text-transform:uppercase}
  /* bilah bawah kaku: tidak ikut efek tarik/regang halaman dan selalu di atas tirai transisi */
  html,body{overscroll-behavior:none}
- .mnav{z-index:95}
+ .mnav{z-index:95;transform:translate3d(0,0,0);will-change:transform;backface-visibility:hidden}
  .si{display:flex;align-items:center;gap:14px;padding:12px 20px;min-height:56px;text-decoration:none;color:var(--ink);border-top:1px solid var(--rule)}
  .si:hover{color:var(--ink)}
  .si i{flex:none;width:30px;height:30px;display:grid;place-items:center;border:1px solid var(--rule2);border-radius:50%;font:600 .85rem var(--serif);font-style:normal;color:var(--gold-t)}
  .si span{display:grid;min-width:0;flex:1}.si b{font:600 .95rem/1.35 var(--serif)}.si small{color:var(--muted);font-size:.78rem}
  .si em{font-style:normal;font-size:.76rem;font-weight:600;color:var(--gold-t)}
  .si.cur i{background:var(--red);border-color:var(--red);color:#fff}
+ /* kolom cari (pindah dari header) dan halaman Lainnya */
+ main{padding-top:20px}
+ .msearch{display:flex;align-items:center;gap:10px;width:100%;min-height:48px;padding:0 14px;margin:0 0 18px;background:var(--surface);border:1px solid var(--rule);border-radius:10px;color:var(--muted);font:400 .95rem var(--sans);text-align:left;justify-content:flex-start}
+ .msearch:hover,.msearch:active{background:var(--surface);border-color:var(--rule);color:var(--muted);transform:none}
+ .msearch svg{width:20px;height:20px;flex:none;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round}
+ .lsearch{margin-top:6px}
+ .lh{font:600 .74rem var(--sans);letter-spacing:.07em;text-transform:uppercase;color:var(--muted);margin:24px 4px 10px;padding:0;border:0}
+ .lh::after{display:none}
+ .lcard{display:flex;align-items:center;gap:14px;padding:16px;background:var(--surface);border:1px solid var(--rule);border-radius:10px}
+ .lcard .av{width:52px;height:52px}
+ .lcard .lwho{min-width:0;flex:1}
+ .lcard b{display:block;font:600 1.05rem/1.3 var(--serif);overflow-wrap:anywhere}
+ .lcard small{display:block;color:var(--muted);font-size:.84rem;line-height:1.45;overflow-wrap:anywhere}
+ .lcard button{flex:none}
+ .lgrp{background:var(--surface);border:1px solid var(--rule);border-radius:10px;overflow:hidden}
+ .lgrp .si:first-child{border-top:0}
+ .lgrp .si::after{content:"\203A";margin-left:auto;color:var(--muted);font-size:1.5rem;line-height:1}
+ .lgrp .pop{position:static;width:auto;margin:0;padding:16px;box-shadow:none;border:0;background:none;animation:none}
+ .lgrp .pop .seg:last-child{margin-bottom:0}
  /* halaman masuk */
  body.is-auth main{padding-top:8px}
  .authbox{border-radius:4px}
@@ -251,7 +273,8 @@ button.lnk:hover{background:none;color:var(--red);box-shadow:none;transform:none
  .hm .hc{height:10px}
  .la{grid-area:l;font-size:.78rem}
 }
-@keyframes sheetup{from{transform:translateY(32px);opacity:0}to{transform:none;opacity:1}}
+@keyframes sheetin{from{transform:translate3d(0,100%,0)}to{transform:none}}
+@keyframes scrimin{from{opacity:0}to{opacity:1}}
 @media print{.mnav{display:none!important}}
 
 /* ---- rincian murid ---- */
