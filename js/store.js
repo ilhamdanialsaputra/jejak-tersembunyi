@@ -4,10 +4,12 @@
    Butuh di index.html, SEBELUM store.js:
      firebase-app-compat.js, firebase-auth-compat.js, firebase-firestore-compat.js
    Skema Firestore:
-     users/{uid}      {uid, role, nama, nis?, email?, kelas}
+     users/{uid}      {uid, role, nama, nis?, email?, foto?, kelas}
      classes/{kode}   {kode, nama, guruUid, dibuat}
      progress/{uid}   {done, notes, seen, updated, nama, nis, kelas}
-   NIS murid dipetakan ke email semu "<nis>@murid.jejak.id".
+   NIS murid (akun lama) dipetakan ke email semu "<nis>@murid.jejak.id".
+   Masuk dengan Google: Store.auth.google() lalu, untuk pengguna baru,
+   Store.auth.completeGoogle(). Nama dan foto disinkronkan dari Google.
    ============================================================ */
 
 /* TEMPEL firebaseConfig dari Firebase Console di sini */
@@ -25,7 +27,7 @@ const Store = (() => {
   const A = firebase.auth(), D = firebase.firestore();
   const AL = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789', DOM = '@murid.jejak.id';
   const fail = m => { throw new Error(m); };
-  const pub = u => u && { uid: u.uid, role: u.role, nama: u.nama, nis: u.nis, email: u.email, kelas: u.kelas };
+  const pub = u => u && { uid: u.uid, role: u.role, nama: u.nama, nis: u.nis, email: u.email, foto: u.foto, kelas: u.kelas };
 
   const PESAN = {
     'auth/email-already-in-use': 'NIS/email ini sudah terdaftar. Silakan masuk.',
@@ -37,20 +39,46 @@ const Store = (() => {
     'auth/weak-password': 'Kata sandi minimal 6 karakter.',
     'auth/network-request-failed': 'Koneksi bermasalah. Periksa internetmu.',
     'auth/too-many-requests': 'Terlalu banyak percobaan. Coba lagi beberapa menit lagi.',
+    'auth/popup-closed-by-user': 'Masuk dengan Google dibatalkan.',
+    'auth/cancelled-popup-request': 'Masuk dengan Google dibatalkan.',
+    'auth/popup-blocked': 'Jendela Google diblokir peramban. Izinkan pop-up untuk situs ini, lalu coba lagi.',
+    'auth/unauthorized-domain': 'Alamat situs ini belum didaftarkan di Firebase (Authorized domains).',
+    'auth/operation-not-allowed': 'Masuk dengan Google belum diaktifkan di Firebase.',
+    'auth/account-exists-with-different-credential': 'Email ini sudah terdaftar dengan cara masuk lain. Masuk dengan kata sandi dulu.',
+    'auth/user-disabled': 'Akun ini dinonaktifkan.',
+    'auth/web-storage-unsupported': 'Peramban memblokir penyimpanan. Aktifkan cookie atau keluar dari mode privat.',
     'permission-denied': 'Akses ditolak oleh server.',
     'unavailable': 'Server tidak terjangkau. Periksa koneksi.'
   };
   const LAMBAT = 'Koneksi lambat atau terputus. Coba lagi.';
+  const msgOf = e => e && e.code ? (PESAN[e.code] || PESAN[e.code.replace('firestore/', '')] || e.message) : ((e && e.message) || 'Terjadi kesalahan.');
   const wrap = async f => {
     let tm;
     try { return await Promise.race([f(), new Promise((_, no) => { tm = setTimeout(() => no(new Error(LAMBAT)), 30000); })]); }
-    catch (e) { throw new Error(e && e.code ? (PESAN[e.code] || PESAN[e.code.replace('firestore/', '')] || e.message) : (e.message || 'Terjadi kesalahan.')); }
+    catch (e) { throw new Error(msgOf(e)); }
     finally { clearTimeout(tm); }
   };
 
   /* tunggu status login pertama (Firebase memulihkan sesi secara asinkron) */
   const ready = new Promise(res => { const un = A.onAuthStateChanged(u => { un(); res(u); }); });
   const profile = async uid => { const s = await D.collection('users').doc(uid).get(); return s.exists ? pub(s.data()) : null; };
+  /* ---- Google ---- */
+  const isG = au => (au.providerData || []).some(p => p.providerId === 'google.com');
+  const gInfo = au => ({
+    nama: (au.displayName || '').trim() || (au.email || '').split('@')[0] || 'Pengguna',
+    email: (au.email || '').toLowerCase(), foto: au.photoURL || ''
+  });
+  /* samakan nama + foto dengan profil Google terbaru. Bila aturan Firestore belum
+     mengizinkan update, tampilan tetap memakai data Google terbaru (hanya lokal). */
+  const sync = async (au, p) => {
+    if (!isG(au)) return p;
+    const g = gInfo(au), ch = {};
+    if (au.displayName && g.nama !== p.nama) ch.nama = g.nama;
+    if (g.foto !== (p.foto || '')) ch.foto = g.foto;
+    if (!Object.keys(ch).length) return p;
+    try { await D.collection('users').doc(p.uid).update(ch); } catch (e) { /* abaikan */ }
+    return { ...p, ...ch };
+  };
   const newCode = async () => {
     for (let i = 0; i < 12; i++) {
       const k = Array.from({ length: 5 }, () => AL[Math.floor(Math.random() * AL.length)]).join('');
@@ -65,7 +93,46 @@ const Store = (() => {
       current: () => wrap(async () => {
         await ready;
         const u = A.currentUser;
-        return u ? profile(u.uid) : null;
+        if (!u) return null;
+        const p = await profile(u.uid);
+        return p ? sync(u, p) : null;
+      }),
+      /* langkah 1: pilih akun Google. {user} bila sudah punya profil, {baru} bila perlu melengkapi */
+      google: async () => {
+        const prov = new firebase.auth.GoogleAuthProvider();
+        prov.setCustomParameters({ prompt: 'select_account' });
+        let cred;
+        try { cred = await A.signInWithPopup(prov); } catch (e) { throw new Error(msgOf(e)); }
+        return wrap(async () => {
+          const p = await profile(cred.user.uid);
+          return p ? { user: await sync(cred.user, p) } : { baru: gInfo(cred.user) };
+        });
+      },
+      /* langkah 2 (hanya pengguna baru): pilih peran lalu buat profil */
+      completeGoogle: ({ role, kode, nis, kelas }) => wrap(async () => {
+        const au = A.currentUser;
+        if (!au) fail('Sesi Google berakhir. Silakan ulangi masuk.');
+        const ada = await profile(au.uid);
+        if (ada) return ada;
+        const g = gInfo(au);
+        if (role === 'murid') {
+          kode = (kode || '').trim().toUpperCase(); nis = (nis || '').trim();
+          if (!kode) fail('Isi kode kelas dari gurumu.');
+          if (nis && !/^\d{4,20}$/.test(nis)) fail('NIS berisi angka saja (4–20 digit), atau kosongkan.');
+          if (!(await D.collection('classes').doc(kode).get()).exists) fail('Kode kelas tidak ditemukan. Minta kode ke gurumu.');
+          const u = { uid: au.uid, role: 'murid', nama: g.nama, nis, email: g.email, foto: g.foto, kelas: kode };
+          await D.collection('users').doc(u.uid).set(u);
+          return pub(u);
+        }
+        kelas = (kelas || '').trim();
+        if (!kelas) fail('Isi nama kelas / mata pelajaran.');
+        const k = await newCode();
+        const u = { uid: au.uid, role: 'guru', nama: g.nama, email: g.email, foto: g.foto, kelas: k };
+        const b = D.batch();
+        b.set(D.collection('users').doc(u.uid), u);
+        b.set(D.collection('classes').doc(k), { kode: k, nama: kelas, guruUid: u.uid, dibuat: Date.now() });
+        await b.commit();
+        return pub(u);
       }),
       registerStudent: ({ nama, nis, kode, password }) => wrap(async () => {
         nama = (nama || '').trim(); nis = (nis || '').trim(); kode = (kode || '').trim().toUpperCase();
