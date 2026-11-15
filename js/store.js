@@ -9,7 +9,7 @@
      progress/{uid}   {done, notes, seen, updated, nama, nis, kelas}
    NIS murid (akun lama) dipetakan ke email semu "<nis>@murid.jejak.id".
    Masuk dengan Google: Store.auth.google() lalu, untuk pengguna baru,
-   Store.auth.completeGoogle(). Nama dan foto disinkronkan dari Google.
+   Store.auth.completeGoogle(). Nama diisi sendiri; hanya foto disinkronkan dari Google.
    ============================================================ */
 
 /* TEMPEL firebaseConfig dari Firebase Console di sini */
@@ -73,7 +73,6 @@ const Store = (() => {
   const sync = async (au, p) => {
     if (!isG(au)) return p;
     const g = gInfo(au), ch = {};
-    if (au.displayName && g.nama !== p.nama) ch.nama = g.nama;
     if (g.foto !== (p.foto || '')) ch.foto = g.foto;
     if (!Object.keys(ch).length) return p;
     try { await D.collection('users').doc(p.uid).update(ch); } catch (e) { /* abaikan */ }
@@ -109,25 +108,28 @@ const Store = (() => {
         });
       },
       /* langkah 2 (hanya pengguna baru): pilih peran lalu buat profil */
-      completeGoogle: ({ role, kode, nis, kelas }) => wrap(async () => {
+      completeGoogle: ({ role, nama, kode, nis, kelas }) => wrap(async () => {
         const au = A.currentUser;
         if (!au) fail('Sesi Google berakhir. Silakan ulangi masuk.');
         const ada = await profile(au.uid);
         if (ada) return ada;
         const g = gInfo(au);
+        nama = (nama || '').trim().replace(/\s+/g, ' ');
+        if (!nama) fail('Isi nama lengkapmu.');
+        if (nama.length > 100) fail('Nama terlalu panjang.');
         if (role === 'murid') {
           kode = (kode || '').trim().toUpperCase(); nis = (nis || '').trim();
           if (!kode) fail('Isi kode kelas dari gurumu.');
           if (nis && !/^\d{4,20}$/.test(nis)) fail('NIS berisi angka saja (4–20 digit), atau kosongkan.');
           if (!(await D.collection('classes').doc(kode).get()).exists) fail('Kode kelas tidak ditemukan. Minta kode ke gurumu.');
-          const u = { uid: au.uid, role: 'murid', nama: g.nama, nis, email: g.email, foto: g.foto, kelas: kode };
+          const u = { uid: au.uid, role: 'murid', nama, nis, email: g.email, foto: g.foto, kelas: kode };
           await D.collection('users').doc(u.uid).set(u);
           return pub(u);
         }
         kelas = (kelas || '').trim();
         if (!kelas) fail('Isi nama kelas / mata pelajaran.');
         const k = await newCode();
-        const u = { uid: au.uid, role: 'guru', nama: g.nama, email: g.email, foto: g.foto, kelas: k };
+        const u = { uid: au.uid, role: 'guru', nama, email: g.email, foto: g.foto, kelas: k };
         const b = D.batch();
         b.set(D.collection('users').doc(u.uid), u);
         b.set(D.collection('classes').doc(k), { kode: k, nama: kelas, guruUid: u.uid, dibuat: Date.now() });
