@@ -13,10 +13,10 @@ const Fx=(()=>{
     if(reduce()||a===b){fn();return}
     document.documentElement.dataset.dir=order(b)>=order(a)?'f':'b';
     const app=document.getElementById('app');
-    if(!document.startViewTransition){fn();app.animate([{opacity:0,transform:'translateY(14px)'},{opacity:1,transform:'none'}],{duration:600,easing:'cubic-bezier(.16,1,.3,1)'});return}
+    if(!document.startViewTransition){fn();app.animate([{clipPath:'inset(0 100% 0 0)'},{clipPath:'inset(0 0 0 0)'}],{duration:800,easing:'cubic-bezier(.77,0,.18,1)'});return}
     const l=/^unit-/.test(b)&&app.querySelector(`:is(.peta a,.uc)[href="#${b}"]`),src=l&&l.querySelector('b');
-    if(src)src.style.viewTransitionName='ut';
-    const t=document.startViewTransition(()=>{clear();fn();const h=document.querySelector('#app h1.ut');if(src&&h)h.style.viewTransitionName='ut'});
+    
+    const t=document.startViewTransition(()=>{clear();fn();});
     t.finished.finally(clear)
   }
   /* garis indikator tab yang meluncur dari tab lama ke tab baru */
