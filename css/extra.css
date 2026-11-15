@@ -342,3 +342,22 @@ button.lnk:hover{background:none;color:var(--red);box-shadow:none;transform:none
 @keyframes shim{to{transform:translateX(100%)}}
 @keyframes srchin{from{transform:translate3d(0,-100%,0)}to{transform:none}}
 @media(prefers-reduced-motion:reduce){.msearch::after{display:none}.uc{animation:none}}
+
+/* ---------- spinner, tombol sibuk, kirim jawaban, umpan balik, segarkan ---------- */
+.spin{display:inline-block;width:1em;height:1em;margin-right:.55em;vertical-align:-.15em;border:2px solid currentColor;border-right-color:transparent;border-radius:50%;animation:spin .7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+@media(prefers-reduced-motion:reduce){.spin{animation-duration:1.8s}}
+button:disabled{opacity:.6;cursor:not-allowed}
+button.busy{cursor:progress;opacity:1;display:inline-flex;align-items:center;justify-content:center}
+button.full.busy{display:flex}
+.sub{display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin:8px 0 0}
+.sub .send{min-height:44px}.sub .st{font-size:.8rem;color:var(--muted)}
+.fbk{display:none;margin:10px 0 0;padding:12px 14px;border-left:3px solid var(--gold);background:var(--gold-soft);border-radius:0 4px 4px 0;font-size:.92rem;line-height:1.55}
+.fbk.on{display:block}.fbk b{display:block;font-size:.72rem;letter-spacing:.06em;text-transform:uppercase;color:var(--gold-t);margin-bottom:4px}
+.fbk p{margin:0;white-space:pre-wrap}.fbk small{display:block;margin-top:4px;color:var(--muted)}
+.fbw{margin-top:10px}.fbw textarea{min-height:64px}.fbw .btnrow{margin:8px 0 0;align-items:center}.fbw .st{font-size:.8rem;color:var(--muted)}
+.upd{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:6px}.upd .rf{min-height:40px;padding:6px 14px}
+
+/* layar memuat awal */
+.boot{display:grid;place-items:center;gap:10px;min-height:55vh;text-align:center;padding:24px;color:var(--muted)}
+.boot p{margin:0;font-size:1rem;color:var(--ink)}.boot small{font-size:.85rem}
