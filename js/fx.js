@@ -23,9 +23,9 @@ const Fx=(()=>{
   const build=()=>{el=document.createElement('div');el.className='curtain';el.setAttribute('aria-hidden','true');
     el.innerHTML='<i class="c1"></i><i class="c2"></i><i class="c3"><div class="lab"><span class="z" lang="zh">史</span><b></b><small></small></div></i>';
     document.body.appendChild(el)};
-  const FIX={glosarium:['Glosarium','Istilah kunci'],tokoh:['Tokoh','Kartu tokoh'],'panduan-guru':['Panduan guru','Untuk pengajar'],dasbor:['Dasbor','Pantau kelas'],periksa:['Periksa','Untuk penyusun'],masuk:['Masuk','Akun']};
+  const FIX={unit:['Unit','Daftar unit'],glosarium:['Glosarium','Istilah kunci'],tokoh:['Tokoh','Kartu tokoh'],'panduan-guru':['Panduan guru','Untuk pengajar'],dasbor:['Dasbor','Pantau kelas'],periksa:['Periksa','Untuk penyusun'],masuk:['Masuk','Akun']};
   const ORD=['glosarium','tokoh','panduan-guru','dasbor','periksa','masuk'];
-  const order=h=>h===''||h==='beranda'?0:h.startsWith('unit-')?+h.slice(5):100+(ORD.indexOf(h)<0?9:ORD.indexOf(h));
+  const order=h=>h===''||h==='beranda'?0:h==='unit'?.5:h.startsWith('unit-')?+h.slice(5):100+(ORD.indexOf(h)<0?9:ORD.indexOf(h));
   const label=h=>{if(h===''||h==='beranda')return['Beranda','Peta modul'];
     if(h.startsWith('unit-')){const u=UNITS.find(x=>x.id===+h.slice(5));return u?['Unit '+u.id,u.periode]:['','']}
     return FIX[h]||['','']};
