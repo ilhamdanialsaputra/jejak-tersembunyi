@@ -143,3 +143,35 @@ footer{max-width:1280px;border-top:1px solid var(--rule);padding-top:32px;margin
  .ov.sh .box,.ov .box.det{border:0}
 }
 @media(prefers-reduced-motion:reduce){.hero::before,.pemantik .media img{animation:none!important}.rv,.rv>*{opacity:1!important;transform:none!important}}
+
+/* ================= v2: gerak tingkat atas, progres baca, perbaikan kartu seluler ================= */
+:root{--dx:1}:root[data-dir=b]{--dx:-1}
+/* halaman lama keluar searah gerak, halaman baru masuk dari arah yang sama; judul unit bermorfosis di antaranya */
+::view-transition-old(page){animation:vo2 .42s cubic-bezier(.5,0,.75,0) both}
+::view-transition-new(page){animation:vi2 1s var(--ease) .12s both}
+@keyframes vo2{to{opacity:0;transform:translate3d(calc(var(--dx)*-4%),0,0)}}
+@keyframes vi2{from{opacity:0;transform:translate3d(calc(var(--dx)*6%),28px,0)}}
+::view-transition-group(ut){animation-duration:.95s;animation-timing-function:cubic-bezier(.76,0,.24,1)}
+::view-transition-old(ut),::view-transition-new(ut){height:100%;width:100%;object-fit:none;object-position:left top;mix-blend-mode:normal}
+::view-transition-old(ut){animation:vfo .5s ease both}::view-transition-new(ut){animation:vfi .5s ease .25s both}
+@keyframes vfo{to{opacity:0}}@keyframes vfi{from{opacity:0}}
+/* bilah progres baca di tepi header */
+.bar{display:block;height:2px;margin-top:-1px;background:var(--red);will-change:transform}
+/* hero masuk berurutan, satu kurva */
+.hero h1,.hero .sub,.hero .meta,.hero .acts,.stats{animation-duration:1.1s;animation-timing-function:var(--ease)}
+.hero .stats{animation-delay:.5s}
+/* tanggapan sentuh dan fokus */
+.peta a,.card,.uc,.si,.row,.rk{-webkit-tap-highlight-color:transparent}
+.card:active,.peta a:active,.uc:active{background:var(--paper)}
+:focus-visible{outline:2px solid var(--red);outline-offset:4px;border-radius:2px}
+@media(max-width:899px){
+ /* kartu tokoh: foto kiri, nama dan tahun kanan, tidak tumpang tindih */
+ .card{display:grid;grid-template-columns:56px minmax(0,1fr);column-gap:14px;row-gap:3px;align-items:start;padding:16px}
+ .card .potret{grid-column:1;grid-row:1/3;width:56px;height:56px;margin:0;align-self:start}
+ .card>b{grid-column:2;grid-row:1;align-self:end;min-width:0;font-size:1.08rem;line-height:1.25;overflow-wrap:anywhere}
+ .card .thn{grid-column:2;grid-row:2;align-self:start;min-width:0;overflow-wrap:anywhere}
+ .card .tn,.card .src{grid-column:1/-1}
+ .card .tn{margin:12px 0 4px}
+ .card .src{margin-top:8px}
+ .cards{gap:12px}
+}
