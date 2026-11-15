@@ -120,7 +120,7 @@ async function viewDasbor(soft){
    ${n?`<div class="kpis">${kpi('Murid terdaftar',n,'di kelas ini')}${kpi('Rata-rata progres',avg+'%','dari tujuh unit')}${kpi('Aktif 7 hari terakhir',act+'<i>/'+n+'</i>','murid')}${kpi('Jawaban terkumpul',ans,'pemantik, refleksi, cek')}</div>
    <div class="dgrid"><section class="panel"><h3>Ketuntasan per unit</h3>${unitBars}</section>
     <section class="panel"><h3>Perlu perhatian</h3>${risk.length?risk.map(r=>`<button class="rk" data-i="${R.indexOf(r)}"><span class="av s">${esc(ini(r.user.nama))}</span><span><b>${esc(r.user.nama)}</b><small>${!r.c.last?'Belum mulai belajar':Date.now()-r.c.last>6048e5?'Tidak aktif '+rel(r.c.last).replace(' lalu',''):'Progres masih '+r.c.pct+'%'}</small></span></button>`).join(''):'<p class="muted">Semua murid aktif dan berjalan baik.</p>'}</section></div>
-   <section class="panel tbl"><div class="tb"><input class="find" id="q" placeholder="Cari nama atau NIS" aria-label="Cari murid"><select id="so" aria-label="Urutkan"><option value="n">Urut nama</option><option value="p">Progres tertinggi</option><option value="pl">Progres terendah</option><option value="t">Terakhir aktif</option></select><button class="ghost" id="ex">Unduh CSV</button></div>
+   <section class="panel tbl"><div class="tb"><input class="find" id="q" placeholder="Cari nama atau NIS" aria-label="Cari murid"><select id="so" aria-label="Urutkan"><option value="n">Urut nama</option><option value="p">Progres tertinggi</option><option value="pl">Progres terendah</option><option value="t">Terakhir aktif</option></select><button class="ghost" id="ex" type="button">CSV ringkasan</button><button class="ghost" id="ex2" type="button">CSV jawaban</button><span class="st" id="exs" role="status"></span></div>
     <div class="lg"><span><i class="hc s2"></i>Selesai</span><span><i class="hc s1"></i>Sedang dibaca</span><span><i class="hc s0"></i>Belum</span></div>
     <div class="rows" id="rows"></div></section>`
    :`<section class="panel empty"><h3>Belum ada murid</h3><p>Bagikan kode kelas <b>${esc(info.kode||me.kelas)}</b> ke murid. Mereka mendaftar lewat tab <b>Daftar</b> sebagai Murid, lalu progresnya muncul di sini.</p>
@@ -142,10 +142,31 @@ async function viewDasbor(soft){
   $('#rows').onclick=e=>{const r=e.target.closest('.row');if(r)detail(R[+r.dataset.i])};
   $('#rows').onkeydown=e=>{if(e.key==='Enter'){const r=e.target.closest('.row');if(r)detail(R[+r.dataset.i])}};
   $$('.rk').forEach(b=>b.onclick=()=>detail(R[+b.dataset.i]));
-  $('#ex').onclick=()=>{const h=['Nama','NIS','Progres %','Unit selesai','Kata jawaban','Terakhir aktif',...UNITS.map(u=>'Unit '+u.id)];
-    const q=v=>'"'+String(v).replace(/"/g,'""')+'"';
-    const csv=[h,...R.map(r=>[r.user.nama,r.user.nis,r.c.pct,r.c.doneN,r.c.words,r.c.last?new Date(r.c.last).toISOString().slice(0,16).replace('T',' '):'',...r.c.rows.map(x=>['belum','sedang','selesai'][x.st])])].map(a=>a.map(q).join(',')).join('\n');
-    const a=document.createElement('a');a.href=URL.createObjectURL(new Blob(['\ufeff'+csv],{type:'text/csv'}));a.download='progres-'+(info.kode||'kelas')+'.csv';a.click();setTimeout(()=>URL.revokeObjectURL(a.href),2e3)};
+  /* ---- unduh CSV ---- */
+  const kode=info.kode||'kelas',nowStr=()=>new Date().toISOString().slice(0,10);
+  const ts=t=>t?new Date(t-new Date().getTimezoneOffset()*6e4).toISOString().slice(0,16).replace('T',' '):'';
+  const cell=v=>{let t=v==null?'':String(v);if(typeof v==='string'&&/^[=+\-@\t\r]/.test(t))t="'"+t;return'"'+t.replace(/"/g,'""')+'"'};
+  const dl=(nama,rows)=>{const a=document.createElement('a');a.href=URL.createObjectURL(new Blob(['\ufeff'+rows.map(r=>r.map(cell).join(',')).join('\r\n')],{type:'text/csv;charset=utf-8'}));a.download=nama;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),2e3)};
+  const ST=['belum','sedang dibaca','selesai'];
+  $('#ex').onclick=()=>{
+    const h=['Nama','NIS','Kelas','Progres %','Unit selesai','Jawaban terkirim','Total kata','Terakhir aktif'];
+    UNITS.forEach(u=>h.push('Unit '+u.id+' status','Unit '+u.id+' bagian dibaca (dari 8)','Unit '+u.id+' jawaban terkirim'));
+    dl('ringkasan-'+kode+'-'+nowStr()+'.csv',[h,...R.map(r=>[r.user.nama,r.user.nis,info.nama,r.c.pct,r.c.doneN,r.c.ans,r.c.words,ts(r.c.last),
+      ...r.c.rows.flatMap(x=>[ST[x.st],x.seen,x.ans])])])};
+  const JENIS=k=>k==='pemantik'?'Pemantik':/^q\d+$/.test(k)?'Bandingkan sumber':k==='refleksi'?'Refleksi':/^c\d+$/.test(k)?'Cek pemahaman':'Lainnya';
+  const TANYA=(u,k)=>k==='pemantik'?u.pemantik.teks:k==='refleksi'?u.refleksi:/^q\d+$/.test(k)?(u.banding.tanya[+k.slice(1)]||k):/^c\d+$/.test(k)?((u.cek[+k.slice(1)]||{}).q||k):k;
+  const RK=k=>k==='pemantik'?0:/^q/.test(k)?1:k==='refleksi'?2:3;
+  $('#ex2').onclick=async e=>{const st=$('#exs');st.textContent='';
+    try{await busy(e.currentTarget,(async()=>{
+      let gagal=0;const F=await Promise.all(R.map(r=>Store.feedback.load(r.user.uid).catch(()=>{gagal++;return{}})));
+      const rows=[['Nama','NIS','Unit','Judul unit','Jenis','Pertanyaan','Jawaban murid','Jumlah kata','Waktu dikirim','Umpan balik guru','Waktu umpan balik']];
+      R.forEach((r,i)=>UNITS.forEach(u=>{const S=((r.progress.sent||{})[u.id])||{};
+        Object.keys(S).filter(k=>wc(S[k].t)).sort((x,y)=>RK(x)-RK(y)||x.localeCompare(y,undefined,{numeric:true})).forEach(k=>{const f=F[i][u.id+'_'+k]||{};
+          rows.push([r.user.nama,r.user.nis,u.id,u.judul,JENIS(k),TANYA(u,k),S[k].t,wc(S[k].t),ts(S[k].at),f.t||'',ts(f.at)])})}));
+      if(rows.length<2){st.textContent='Belum ada jawaban yang dikirim murid.';return}
+      dl('jawaban-'+kode+'-'+nowStr()+'.csv',rows);
+      st.textContent=(rows.length-1)+' jawaban diunduh'+(gagal?' · umpan balik '+gagal+' murid gagal dimuat':'')})(),'Menyiapkan…')}
+    catch(x){st.textContent='Gagal: '+x.message}};
 }
 async function detail(r){
   ov.className='ov';ov.innerHTML='<div class="box det"><p class="meta" style="padding:24px"><i class="spin"></i>Memuat jawaban…</p></div>';
