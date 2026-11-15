@@ -377,3 +377,9 @@ dl.inf dt{flex:none;width:92px;padding-top:2px;font-size:.78rem;letter-spacing:.
 .sensn{margin:10px 0 0;padding:10px 12px;border-left:3px solid var(--warn,#a06a00);background:var(--gold-soft);border-radius:0 4px 4px 0;font-size:.88rem}
 .infb{padding:4px 20px 18px}
 @media print{.pm{display:block}.ibtn,.sens{display:none}}
+
+/* peran: elemen khusus guru disembunyikan untuk murid dan tamu */
+body:not([data-role=guru]) .guru-only{display:none!important}
+.qa.gq{margin:1.2em 0;padding:12px 16px;border-left:3px solid var(--rule2);border-radius:0 4px 4px 0;background:var(--paper)}
+.qa.gq .gql{margin:0;font-weight:500;font-size:.96rem;line-height:1.55}
+.cek .kunci:first-of-type{margin-top:8px}
