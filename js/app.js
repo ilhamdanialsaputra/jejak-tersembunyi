@@ -246,7 +246,7 @@ function dispatch(h){closeOv();Sess.paint();
   if(h==='unit')return viewUnitList();if(h==='lainnya')return viewLainnya();if(h==='glosarium')return viewGlosarium();if(h==='tokoh')return viewTokoh();if(h==='panduan-guru')return viewGuru();
   if(h==='periksa')return viewPeriksa();if(h==='dasbor')return viewDasbor();viewHome()}
 function viewLainnya(){renderNav('lainnya');const u=Sess.user(),role=Sess.role();
-  const acct=u?`<div class="lcard"><div class="av pf">${PFP}</div><div class="lwho"><b>${esc(u.nama)}</b><small>${role==='guru'?'Guru · '+esc(u.email):'Murid · NIS '+esc(u.nis)}</small>${u.kelas?`<small>Kode kelas ${esc(u.kelas)}</small>`:''}</div><button class="ghost" id="lOut">Keluar</button></div>`
+  const acct=u?`<div class="lcard"><div class="av pf">${avatar(u)}</div><div class="lwho"><b>${esc(u.nama)}</b><small>${role==='guru'?'Guru':'Murid'} · ${esc(idOf(u))}</small>${u.kelas?`<small>Kode kelas ${esc(u.kelas)}</small>`:''}</div><button class="ghost" id="lOut">Keluar</button></div>`
    :`<div class="lcard"><div class="av pf">${PFP}</div><div class="lwho"><b>Tamu</b><small>Progres hanya tersimpan di peramban ini.</small></div><button id="lIn">Masuk</button></div>`;
   const guru=role==='guru'?`<h2 class="lh">Untuk guru</h2><div class="lgrp"><a class="si" href="#panduan-guru"><span><b>Panduan guru</b><small>Skenario, rubrik, episode sensitif</small></span></a>${role==='guru'?`<a class="si" href="#dasbor"><span><b>Dasbor</b><small>Pantau progres kelas</small></span></a>`:''}</div>`:'';
   app.innerHTML=`<h1>Lainnya</h1><button type="button" class="msearch lsearch" id="mSearch"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="M16 16l5 5"/></svg>Cari unit, tokoh, atau istilah</button>
