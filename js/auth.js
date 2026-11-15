@@ -113,6 +113,7 @@ function viewMasuk(){
       <h2>Satu langkah lagi</h2><p class="hint">Kamu masuk sebagai siapa?</p>
       <div class="seg role"><button type="button" data-r="murid" aria-pressed="${M}">Murid</button><button type="button" data-r="guru" aria-pressed="${!M}">Guru</button></div>
       <form id="fo" novalidate>
+       ${F('nama','Nama lengkap','text','Tulis nama aslimu','name')}
        ${M?F('kode','Kode kelas','text','5 karakter dari gurumu','off')+'<label class="fl"><span>NIS (opsional)</span><input name="nis" type="text" inputmode="numeric" placeholder="Boleh dikosongkan" autocomplete="off"></label>'
           :F('kelas','Nama kelas / mata pelajaran','text','mis. XI-3 Sejarah','off')}
        <p class="err" id="er" role="alert"></p>
@@ -121,7 +122,7 @@ function viewMasuk(){
       box.querySelectorAll('[data-r]').forEach(b=>b.onclick=()=>{r=b.dataset.r;paint()});
       $('#sw').onclick=async()=>{try{await Store.auth.logout()}catch(e){}home()};
       $('#fo').onsubmit=async e=>{e.preventDefault();const f=e.target,v=Object.fromEntries(new FormData(f)),er=$('#er');er.textContent='';
-        try{await busy(f.querySelector('.full'),(async()=>{await Sess.enter(await Store.auth.completeGoogle({role:r,kode:v.kode,nis:v.nis,kelas:v.kelas}))})(),'Menyimpan…')}
+        try{await busy(f.querySelector('.full'),(async()=>{await Sess.enter(await Store.auth.completeGoogle({role:r,nama:v.nama,kode:v.kode,nis:v.nis,kelas:v.kelas}))})(),'Menyimpan…')}
         catch(x){er.textContent=x.message;f.animate([{transform:'translateX(0)'},{transform:'translateX(-6px)'},{transform:'translateX(6px)'},{transform:'none'}],{duration:260})}};
     };
     paint();
