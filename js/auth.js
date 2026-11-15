@@ -3,6 +3,8 @@
    Bergantung pada Store (store.js). Fungsi/variabel dari app.js
    (state, setState, esc, $, app, ov, after, renderNav) dipakai saat runtime.
    ============================================================ */
+/* siluet profil kosong (bukan huruf depan) */
+const PFP='<svg class="pf" viewBox="0 0 24 24" aria-hidden="true"><circle class="pbg" cx="12" cy="12" r="12"/><circle class="pfg" cx="12" cy="9.3" r="4"/><path class="pfg" d="M4.6 20.6c.7-4 3.6-6.3 7.4-6.3s6.7 2.3 7.4 6.3a11.9 11.9 0 0 1-14.8 0z"/></svg>';
 const Sess=(()=>{
   let user=null,timer=null;const G='jejak-guest';
   const api={
@@ -31,11 +33,11 @@ const Sess=(()=>{
     paint(){const b=document.getElementById('bAcc');if(!b)return;
       document.body.classList.toggle('is-auth',(location.hash||'').slice(1)==='masuk');
       b.classList.toggle('on',!!user);b.setAttribute('aria-label',user?'Akun: '+user.nama:'Masuk');
-      b.innerHTML=user?`<span>${esc(ini(user.nama))}</span>`:'<svg viewBox="0 0 24 24"><circle cx="12" cy="8.5" r="3.6"/><path d="M5 20c.8-3.6 3.7-5.4 7-5.4s6.2 1.8 7 5.4"/></svg>'},
+      b.innerHTML=user?PFP:'<svg viewBox="0 0 24 24"><circle cx="12" cy="8.5" r="3.6"/><path d="M5 20c.8-3.6 3.7-5.4 7-5.4s6.2 1.8 7 5.4"/></svg>'},
     async panel(){
       if(!user){api.go('masuk');return}
       const c=await Store.teacher.classInfo(user.kelas);
-      ov.className='ov';ov.innerHTML=`<div class="box acc"><div class="av">${esc(ini(user.nama))}</div><h3>${esc(user.nama)}</h3>
+      ov.className='ov';ov.innerHTML=`<div class="box acc"><div class="av pf">${PFP}</div><h3>${esc(user.nama)}</h3>
         <p class="meta">${user.role==='guru'?'Guru':'Murid'} · ${esc(user.role==='guru'?user.email:'NIS '+user.nis)}</p>
         <p class="kls">${c?esc(c.nama):''} <span>Kode kelas <b>${esc(user.kelas)}</b></span></p>
         <div class="btnrow"><button id="lo">Keluar</button><button class="ghost" id="cl">Tutup</button></div></div>`;
