@@ -132,7 +132,7 @@ function infoUnit(u){
   const p=u.bab.split(' · '),bab=p[0],hl=p.slice(1).join(' · ');
   const R=[['Buku teks',bab],...(hl?[[/^hlm\./.test(hl)?'Halaman':'Rujukan',hl.replace(/^hlm\.\s*/,'')]]:[]),['Periode',u.periode],['Waktu baca',u.waktu]];
   const body=`<dl class="inf">${R.map(([k,v])=>`<div><dt>${k}</dt><dd>${esc(v)}</dd></div>`).join('')}</dl>${u.sensitif?'<p class="sensn"><b>Episode sensitif.</b> Guru membaca Panduan L.4 lebih dulu.</p>':''}`;
-  if(matchMedia('(max-width:899px)').matches){sheet('Unit '+u.id,`<div class="infb">${body}</div>`);return}
+  if(matchMedia('(max-width:899px) and (pointer:coarse)').matches){sheet('Unit '+u.id,`<div class="infb">${body}</div>`);return}
   ov.removeAttribute('style');ov.className='ov';
   ov.innerHTML=`<div class="box inf" role="dialog" aria-modal="true" aria-label="Info unit ${u.id}"><div class="ih"><h3>Unit ${u.id}</h3><button type="button" class="ghost" id="ix">Tutup</button></div>${body}</div>`;
   $('#ix').onclick=closeOv;$('#ix').focus()}
@@ -175,7 +175,7 @@ function viewUnit(id){const u=UNITS.find(x=>x.id===id);if(!u){location.hash='#be
   $$('textarea',app).forEach(t=>{cnt(t);t.addEventListener('input',()=>{N[t.dataset.k]=t.value;save();cnt(t);paint(t.dataset.k);$('#saved').textContent=Sess.msg()})});
   $$('[data-key]',app).forEach(b=>b.onclick=()=>{const k=b.closest('.cek').querySelector('.kunci'),h=k.classList.toggle('hidden');b.textContent=h?'Lihat kunci':'Sembunyikan kunci';b.setAttribute('aria-expanded',!h)});
   $$('[data-f]',app).forEach(b=>b.onclick=()=>{$$('[data-f]',app).forEach(x=>x.setAttribute('aria-pressed',x===b));$$('figure',app).forEach(f=>f.classList.toggle('hidden',!!b.dataset.f&&f.dataset.j!==b.dataset.f))});
-  $('#selesai').onclick=()=>{state.done[u.id]=!state.done[u.id];save();viewUnit(id)};
+  $('#selesai').onclick=()=>{const y=window.pageYOffset,r=document.documentElement,o=r.style.scrollBehavior;state.done[u.id]=!state.done[u.id];save();viewUnit(id);r.style.scrollBehavior='auto';scrollTo(0,y);r.style.scrollBehavior=o};
   $('#uinfo').onclick=()=>infoUnit(u);
   /* daftar isi + scrollspy */
   const seen=state.seen[u.id]=state.seen[u.id]||{},tb=$$('.toc [data-go]',app),mark=()=>{tb.forEach(b=>b.classList.toggle('seen',!!seen[b.dataset.go]));$('#tp').style.transform='scaleX('+Object.keys(seen).length/8+')'};mark();
