@@ -40,9 +40,12 @@ const Store = (() => {
     'permission-denied': 'Akses ditolak oleh server.',
     'unavailable': 'Server tidak terjangkau. Periksa koneksi.'
   };
+  const LAMBAT = 'Koneksi lambat atau terputus. Coba lagi.';
   const wrap = async f => {
-    try { return await f(); }
+    let tm;
+    try { return await Promise.race([f(), new Promise((_, no) => { tm = setTimeout(() => no(new Error(LAMBAT)), 30000); })]); }
     catch (e) { throw new Error(e && e.code ? (PESAN[e.code] || PESAN[e.code.replace('firestore/', '')] || e.message) : (e.message || 'Terjadi kesalahan.')); }
+    finally { clearTimeout(tm); }
   };
 
   /* tunggu status login pertama (Firebase memulihkan sesi secara asinkron) */
@@ -59,11 +62,11 @@ const Store = (() => {
   return {
     mode: 'firebase',
     auth: {
-      async current() {
+      current: () => wrap(async () => {
         await ready;
         const u = A.currentUser;
         return u ? profile(u.uid) : null;
-      },
+      }),
       registerStudent: ({ nama, nis, kode, password }) => wrap(async () => {
         nama = (nama || '').trim(); nis = (nis || '').trim(); kode = (kode || '').trim().toUpperCase();
         if (!nama || !nis || !kode || !password) fail('Lengkapi semua kolom.');
@@ -106,15 +109,25 @@ const Store = (() => {
       load: uid => wrap(async () => {
         const s = await D.collection('progress').doc(uid).get();
         const p = s.exists ? s.data() : {};
-        return { done: p.done || {}, notes: p.notes || {}, seen: p.seen || {} };
+        return { done: p.done || {}, notes: p.notes || {}, seen: p.seen || {}, sent: p.sent || {} };
       }),
       save: (uid, s) => wrap(async () => {
         const u = await profile(uid);
         if (!u) return;
         await D.collection('progress').doc(uid).set({
-          done: s.done, notes: s.notes, seen: s.seen, updated: Date.now(),
+          done: s.done, notes: s.notes, seen: s.seen, sent: s.sent || {}, updated: Date.now(),
           nama: u.nama, nis: u.nis || '', kelas: u.kelas
         });
+      })
+    },
+    feedback: {
+      /* umpan balik guru untuk satu murid: { "<unit>_<kunci>": {t, at, by} } */
+      load: uid => wrap(async () => {
+        const s = await D.collection('feedback').doc(uid).get();
+        return s.exists ? (s.data().items || {}) : {};
+      }),
+      save: (uid, key, text, by) => wrap(async () => {
+        await D.collection('feedback').doc(uid).set({ items: { [key]: { t: text, at: Date.now(), by: by || '' } } }, { merge: true });
       })
     },
     teacher: {
