@@ -93,8 +93,7 @@ const Fx=(()=>{
       if(!abs&&!dt){el._v=undefined;el.style.removeProperty('--py');return}
       const t=pTarget(el,h);if(t===null)return;
       let v=el._v;if(v===undefined)v=t;else{v+=(t-v)*.14;if(Math.abs(t-v)<.15)v=t;else busy=true}
-      el._v=v;el.style.setProperty('--py',v.toFixed(1)+'px');
-      if(abs)el.style.setProperty('--pr',(-v*.03).toFixed(2)+'deg')});
+      el._v=v;el.style.setProperty('--py',v.toFixed(1)+'px')});
     if(busy)pt=requestAnimationFrame(pStep)};
   const pKick=()=>{if(!pt)pt=requestAnimationFrame(pStep)};
   addEventListener('scroll',pKick,{passive:true});addEventListener('resize',pKick);
