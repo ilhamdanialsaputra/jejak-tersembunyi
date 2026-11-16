@@ -6,30 +6,33 @@
 <title>Jejak yang Tersembunyi: Peran Etnis Tionghoa dalam Sejarah Indonesia — E-Modul Sejarah Kelas XI</title>
 <meta name="description" content="E-modul suplemen Sejarah kelas XI tentang peran etnis Tionghoa dalam sejarah Indonesia: tujuh unit berbasis hidden history dengan kartu tokoh, galeri sumber, dan tugas bandingkan sumber.">
 <link rel="preconnect" href="https://www.gstatic.com" crossorigin><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,500;0,600;1,500&family=Inter:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400..700;1,6..72,400..600&family=Public+Sans:wght@400;500;600&display=swap">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@600&text=%E5%8F%B2&display=swap">
-<link rel="stylesheet" href="css/style.css?v=2">
-<link rel="stylesheet" href="css/extra.css?v=11">
-<meta name="theme-color" content="#9A2B21">
+<link rel="stylesheet" href="css/style.css?v=20">
+<link rel="stylesheet" href="css/pages.css?v=20">
+<link rel="stylesheet" href="css/parts.css?v=20">
+<meta name="theme-color" content="#FFFFFF">
 </head>
 <body>
 <a class="skip" href="#app">Lewati ke isi</a>
-<header class="top"><div class="topin">
-  <a class="brand" href="#beranda"><span>Jejak yang Tersembunyi<small>E-modul suplemen Sejarah kelas XI · peran etnis Tionghoa dalam sejarah Indonesia</small></span></a>
-  <nav class="units dragx" id="nav" aria-label="Navigasi modul"></nav>
+<header class="top" id="top"><div class="topin">
+  <a class="brand" href="#beranda"><span class="logo" lang="zh" aria-hidden="true">史</span><span class="brt"><b>Jejak yang Tersembunyi</b><small>E-modul suplemen Sejarah kelas XI · peran etnis Tionghoa dalam sejarah Indonesia</small></span></a>
+  <nav class="pnav" id="nav" aria-label="Navigasi modul"></nav>
   <div class="tools">
-    <button class="icon" id="bAcc" aria-label="Masuk" title="Akun"></button>
-    <button class="icon" id="bSearch" aria-label="Cari (tekan /)" title="Cari (/)"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="6.5"/><path d="M16 16l5 5"/></svg></button>
-    <button class="icon" id="bSet" aria-label="Pengaturan tampilan" aria-expanded="false" title="Tampilan"><svg viewBox="0 0 24 24"><path d="M4 7h10M18 7h2M4 17h2M10 17h10"/><circle cx="16" cy="7" r="2"/><circle cx="8" cy="17" r="2"/></svg></button>
+    <button class="searchbtn" id="bSearch" type="button" aria-label="Cari (tekan /)" title="Cari (/)"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="M16 16l5 5"/></svg><span class="sl">Cari</span><kbd>/</kbd></button>
+    <button class="icon dt" id="bSet" type="button" aria-label="Pengaturan tampilan" aria-expanded="false" title="Tampilan"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h10M18 7h2M4 17h2M10 17h10"/><circle cx="16" cy="7" r="2"/><circle cx="8" cy="17" r="2"/></svg></button>
+    <button class="icon dt" id="bAcc" type="button" aria-label="Masuk" aria-expanded="false" title="Akun"></button>
   </div>
   <div class="pop hidden" id="setPop" role="dialog" aria-label="Pengaturan tampilan"></div>
-</div><div class="bar" id="bar"></div></header>
-<main id="app" aria-live="polite" tabindex="-1"><div class="boot"><p><i class="spin"></i>Memuat e-modul…</p><small id="bootSlow" hidden>Koneksi lambat, masih memuat. Mohon tunggu sebentar.</small></div></main>
+  <div class="pop hidden" id="accPop" role="dialog" aria-label="Akun"></div>
+</div></header>
+<main id="app" tabindex="-1"><div class="boot"><p><i class="spin"></i>Memuat e-modul…</p><small id="bootSlow" hidden>Koneksi lambat, masih memuat. Mohon tunggu sebentar.</small></div></main>
 <script>setTimeout(function(){var s=document.getElementById("bootSlow");if(s)s.hidden=false},5000)</script>
 <footer>
-  <div class="divider" aria-hidden="true"></div>
-  <p><b>Prototipe (dummy) e-modul</b> berdasarkan hasil analisis kebutuhan dua SMA di Jakarta, September 2026. Foto, dokumen, audio, dan video pada galeri ditampilkan sebagai keterangan sumber; berkas asli dimasukkan pada tahap pengembangan setelah izin koleksi diperoleh. Catatan refleksi dan jawaban tersimpan otomatis.</p>
-  <p>Teks penyusun berlisensi CC BY-SA 4.0. Sumber gambar dan dokumen mengikuti lisensi koleksi masing-masing. <a class="guru-only" href="#periksa">Periksa kelengkapan (penyusun)</a></p>
+  <div class="fin">
+    <p><b>Prototipe (dummy) e-modul</b> berdasarkan hasil analisis kebutuhan dua SMA di Jakarta, September 2026. Foto, dokumen, audio, dan video pada galeri ditampilkan sebagai keterangan sumber; berkas asli dimasukkan pada tahap pengembangan setelah izin koleksi diperoleh. Catatan refleksi dan jawaban tersimpan otomatis.</p>
+    <p>Teks penyusun berlisensi CC BY-SA 4.0. Sumber gambar dan dokumen mengikuti lisensi koleksi masing-masing. <a class="guru-only" href="#periksa">Periksa kelengkapan (penyusun)</a></p>
+  </div>
 </footer>
 <nav class="mnav" id="mnav" aria-label="Menu utama"></nav>
 <div class="tip hidden" id="tip" role="tooltip"></div>
@@ -39,8 +42,8 @@
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 <script src="js/store.js?v=7"></script>
-<script src="js/fx.js?v=2"></script>
-<script src="js/auth.js?v=10"></script>
-<script src="js/app.js?v=10"></script>
+<script src="js/fx.js?v=20"></script>
+<script src="js/auth.js?v=20"></script>
+<script src="js/app.js?v=20"></script>
 </body>
 </html>
