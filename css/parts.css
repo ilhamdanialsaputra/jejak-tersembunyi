@@ -75,9 +75,10 @@ dl.inf dd{margin:0;font-size:.9375rem;line-height:1.5}
 @media(max-width:899px){.dbody{padding:4px 20px calc(24px + env(safe-area-inset-bottom,0px))}}
 
 /* lightbox */
-.ov.lb{align-items:center;background:rgba(8,10,12,.94);cursor:zoom-out}
-.ov.lb .box{background:none;max-width:min(1100px,100%);padding:0 16px;text-align:center;color:#fff}
-.ov.lb img{display:block;max-width:100%;max-height:78vh;margin:0 auto;border-radius:2px}
+.ov.lb{align-items:center;background:none;animation:none;cursor:zoom-out}
+.ov.lb .lbd{position:absolute;inset:0;background:#06080A;opacity:.93;pointer-events:none}
+.ov.lb .box{position:relative;background:none;max-width:min(1100px,100%);padding:0 16px;text-align:center;color:#fff}
+.ov.lb img{display:block;max-width:100%;max-height:78vh;margin:0 auto;border-radius:2px;box-shadow:0 28px 80px -24px rgba(0,0,0,.8)}
 .ov.lb p{margin:14px 0 0;color:rgba(255,255,255,.85);font-size:.9375rem}
 
 /* ===== halaman masuk ===== */
