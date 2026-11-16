@@ -24,8 +24,9 @@
 .hero h1{font-size:clamp(2.75rem,10vw,5.5rem);line-height:1.02;letter-spacing:-.028em}
 .hero .sub{margin:22px 0 36px;color:var(--red);font:500 clamp(1.2rem,2.4vw,1.6rem)/1.35 var(--serif)}
 .acts{display:flex;gap:12px;flex-wrap:wrap}
-.hero-side{position:relative}
-.glyph{display:none;position:absolute;right:-.04em;top:-3rem;font:600 clamp(9rem,16vw,15rem)/1 var(--cjk);color:var(--rule);pointer-events:none;user-select:none;will-change:transform;transform:translate3d(0,var(--py,0px),0)}
+.hero-side{position:relative;padding-top:5.25rem}
+/* huruf latar: di seluler duduk di ruang kosong atas statistik, di belakang semua isi (z-index -1) */
+.glyph{position:absolute;z-index:-1;right:-.05em;top:-.25rem;font:600 clamp(10rem,46vw,14rem)/1 var(--cjk);color:var(--rule);pointer-events:none;user-select:none;will-change:transform;transform:translate3d(0,var(--py,0px),0) rotate(var(--pr,0deg));transform-origin:50% 58%}
 .stats{position:relative;display:grid;border-top:2px solid var(--ink)}
 .stats div{display:flex;align-items:baseline;justify-content:space-between;gap:16px;padding:14px 0;border-bottom:1px solid var(--rule)}
 .stats b{font:600 clamp(1.5rem,3vw,2.1rem)/1.1 var(--serif);font-variant-numeric:tabular-nums}
@@ -34,12 +35,12 @@
  .hero{grid-template-columns:repeat(12,1fr);column-gap:32px;align-items:end}
  .hero-copy{grid-column:1/8}
  .hero-side{grid-column:9/13;padding-top:12rem}
- .glyph{display:block}
+ .glyph{top:-3rem;right:-.04em;font-size:clamp(9rem,16vw,15rem)}
 }
-.hero-copy>*{animation:up .9s var(--ease) both}
-.hero-copy .kicker{animation-delay:0s}.hero-copy h1{animation-delay:.06s}.hero-copy .sub{animation-delay:.14s}.hero-copy .acts{animation-delay:.22s}
-.hero-side{animation:up .9s var(--ease) .3s both}
-html[data-vt=page] .hero-copy>*,html[data-vt=page] .hero-side{animation:none}
+/* masuk bergiliran hanya saat dimuat langsung; lewat perpindahan halaman, VT yang mengurus (lihat style.css) */
+.hero.ent .hero-copy>*{animation:up .9s var(--ease) both}
+.hero.ent .kicker{animation-delay:0s}.hero.ent h1{animation-delay:.06s}.hero.ent .sub{animation-delay:.14s}.hero.ent .acts{animation-delay:.22s}
+.hero.ent .stats{animation:up .9s var(--ease) .3s both}
 .dtonly{display:none}
 @media(min-width:900px){.dtonly{display:block}}
 @keyframes up{from{opacity:0;transform:translate3d(0,18px,0)}to{opacity:1;transform:none}}
