@@ -1,10 +1,11 @@
 /* ============================================================
-   FX — animasi perpindahan halaman + indikator navigasi.
-   Perpindahan: tiga lapis tirai (merah, emas, kertas) menyapu layar
-   searah navigasi (maju = kiri→kanan, mundur = kanan→kiri), tirai
-   terakhir memuat nama tujuan. Isi halaman diganti saat layar tertutup,
-   lalu tirai terbuka dan isi masuk dari arah yang sama.
-   Otomatis dimatikan bila perangkat meminta "kurangi gerakan".
+   FX — gerak halaman.
+   - Perpindahan halaman: View Transitions API. Judul kartu unit bermorf menjadi
+     judul unit (nama transisi "ut"); sisa halaman bergeser searah navigasi.
+     Cadangan (peramban lama): Web Animations pada #app.
+   - flipFilter: tata letak grid bermorf saat difilter.
+   - parallax: pergeseran kecil untuk elemen [data-par], hanya desktop.
+   Semua gerak mati bila perangkat meminta "kurangi gerakan".
    ============================================================ */
 /* lompat ke atas seketika (mengabaikan scroll-behavior:smooth di CSS) */
 function jumpTop(){const r=document.documentElement;if(!(window.pageYOffset||r.scrollTop||document.body.scrollTop))return;const o=r.style.scrollBehavior;
@@ -12,75 +13,78 @@ function jumpTop(){const r=document.documentElement;if(!(window.pageYOffset||r.s
   requestAnimationFrame(()=>{r.style.scrollBehavior=o});}
 try{history.scrollRestoration='manual'}catch(e){}
 const Fx=(()=>{
-  const reduce=()=>matchMedia('(prefers-reduced-motion:reduce)').matches||!Element.prototype.animate;
-  const EASE='cubic-bezier(.76,0,.18,1)',OUT='cubic-bezier(.2,.7,.2,1)';
-  let el=null,busy=false,phase='',next=null,pi=null;
-  const wait=ms=>new Promise(r=>setTimeout(r,ms));
-  /* cegah gulir sentuh selama transisi (pengganti overflow:hidden pada root yang mengubah ukuran viewport) */
-  const stopT=e=>{if(e.cancelable)e.preventDefault()};
-  /* tunggu n frame (dengan cadangan timer supaya tidak menggantung di tab latar) */
-  const frames=n=>Promise.race([new Promise(r=>{const t=()=>--n>0?requestAnimationFrame(t):r();requestAnimationFrame(t)}),wait(70)]);
-  const build=()=>{el=document.createElement('div');el.className='curtain';el.setAttribute('aria-hidden','true');
-    el.innerHTML='<i class="c1"></i><i class="c2"></i><i class="c3"><div class="lab"><span class="z" lang="zh">史</span><b></b><small></small></div></i>';
-    document.body.appendChild(el)};
-  const FIX={unit:['Unit','Daftar unit'],glosarium:['Glosarium','Istilah kunci'],tokoh:['Tokoh','Kartu tokoh'],'panduan-guru':['Panduan guru','Untuk pengajar'],dasbor:['Dasbor','Pantau kelas'],periksa:['Periksa','Untuk penyusun'],masuk:['Masuk','Akun']};
-  const ORD=['glosarium','tokoh','panduan-guru','dasbor','periksa','masuk'];
-  const order=h=>h===''||h==='beranda'?0:h==='unit'?.5:h.startsWith('unit-')?+h.slice(5):100+(ORD.indexOf(h)<0?9:ORD.indexOf(h));
-  const label=h=>{if(h===''||h==='beranda')return['Beranda','Peta modul'];
-    if(h.startsWith('unit-')){const u=UNITS.find(x=>x.id===+h.slice(5));return u?['Unit '+u.id,u.periode]:['','']}
-    return FIX[h]||['','']};
-  const run=(n,kf,o)=>n.animate(kf,Object.assign({fill:'both',easing:EASE},o)).finished;
-  /* siapkan tirai dan huruf 史 saat browser menganggur, bukan saat transisi pertama */
-  const warm=()=>{if(!el&&!reduce())build();try{document.fonts&&document.fonts.load('600 1em "Noto Serif SC"','史')}catch(e){}};
-  (window.requestIdleCallback?requestIdleCallback(warm,{timeout:2500}):setTimeout(warm,1200));
+  const EASE='cubic-bezier(.32,.72,0,1)';
+  const reduce=()=>matchMedia('(prefers-reduced-motion:reduce)').matches;
+  const canVT=()=>!reduce()&&typeof document.startViewTransition==='function';
+  const root=document.documentElement;
+  let inVt=false;
+  const ORD=['glosarium','tokoh','panduan-guru','dasbor','periksa','lainnya','masuk'];
+  const order=h=>h==='masuk'?-1:h===''||h==='beranda'?0:h==='unit'?.5:h.startsWith('unit-')?+h.slice(5):100+(ORD.indexOf(h)<0?9:ORD.indexOf(h));
+  const setName=(el,n)=>{if(el)el.style.viewTransitionName=n};
+  const clearNames=()=>document.querySelectorAll('[style*="view-transition-name"]').forEach(e=>{e.style.viewTransitionName=''});
 
-  async function go(a,b,fn){
+  const clearOld=()=>{};
+  /* perpindahan halaman */
+  function go(a,b,fn){
     if(reduce()||a===b){fn();return}
-    next=fn;
-    if(busy){if(phase==='reveal'){const f=next;next=null;f()}return}
-    busy=true;phase='cover';
-    document.addEventListener('touchmove',stopT,{passive:false});
-    const app=document.getElementById('app');
-    try{
-      if(!el)build();
-      const d=order(b)>=order(a)?1:-1,P=[...el.children],lab=el.querySelector('.lab'),[t,s]=label(b);
-      lab.querySelector('b').textContent=t;lab.querySelector('small').textContent=s;
-      el.classList.add('on');
-      const M=matchMedia('(max-width:899px)').matches,T=M?{c:320,s:55,h:90,r:380,x:18}:{c:380,s:70,h:170,r:460,x:40};
-      const from=d>0?'translate3d(-101%,0,0)':'translate3d(101%,0,0)',full='translate3d(0,0,0)',to=d>0?'translate3d(101%,0,0)':'translate3d(-101%,0,0)';
-      app.style.willChange='opacity,transform';
-      document.documentElement.classList.add('fx');
-      await Promise.all(P.map((n,i)=>run(n,[{transform:from},{transform:full}],{duration:T.c,delay:i*T.s})));
-      const t0=performance.now();
-      lab.animate([{opacity:0},{opacity:1}],{duration:220,fill:'both',easing:OUT});
-      await frames(2);
-      const y=performance.now()-t0;
-      jumpTop();const f=next;next=null;if(f)f();jumpTop();
-      await wait(Math.max(0,T.h-y));
-      phase='reveal';
-      lab.animate([{opacity:1},{opacity:0}],{duration:160,fill:'both'});
-      app.animate([{opacity:0,transform:`translateX(${d*T.x}px)`},{opacity:1,transform:'none'}],{duration:M?520:760,delay:M?90:140,easing:OUT,fill:'backwards'});
-      await Promise.all([...P].reverse().map((n,i)=>run(n,[{transform:full},{transform:to}],{duration:T.r,delay:i*T.s})));
-    }finally{
-      document.removeEventListener('touchmove',stopT);
-      app.style.willChange='';
-      if(el){el.getAnimations({subtree:true}).forEach(x=>x.cancel());el.classList.remove('on')}
-      document.documentElement.classList.remove('fx');
-      if(next){const f=next;next=null;f()}
-      busy=false;phase='';
+    const dir=order(b)>=order(a)?'fwd':'back',fromUnit=a.startsWith('unit-'),toUnit=b.startsWith('unit-');
+    if(canVT()){
+      root.dataset.vt='page';root.dataset.dir=dir;
+      const vis=el=>{if(!el)return false;const r=el.getBoundingClientRect();return r.top>=0&&r.bottom<=innerHeight+40&&r.width>0};
+      const card=h=>document.querySelector('a[href="#'+h+'"] [data-vt]');
+      if(fromUnit){const t=document.querySelector('.ut');if(vis(t))setName(t,'ut')}
+      else if(toUnit){const t=card(b);if(vis(t))setName(t,'ut')}
+      const t=document.startViewTransition(()=>{
+        inVt=true;try{fn()}finally{inVt=false}
+        clearOld();
+        if(toUnit)setName(document.querySelector('.ut'),'ut');
+        else if(fromUnit){const t=card(a);if(vis(t))setName(t,'ut')}
+      });
+      t.finished.catch(()=>{}).finally(()=>{clearNames();delete root.dataset.vt;delete root.dataset.dir});
+      return;
     }
+    /* cadangan */
+    const app=document.getElementById('app'),d=dir==='fwd'?1:-1;
+    if(!app.animate){fn();return}
+    app.animate([{opacity:1,transform:'none'},{opacity:0,transform:`translateX(${-d*28}px)`}],{duration:220,easing:'cubic-bezier(.4,0,1,1)',fill:'forwards'}).finished.then(()=>{
+      jumpTop();fn();
+      app.animate([{opacity:0,transform:`translateX(${d*40}px)`},{opacity:1,transform:'none'}],{duration:520,easing:EASE});
+      app.getAnimations().forEach(x=>{if(x.playState==='finished'&&x.effect.getKeyframes()[1].opacity==='0')x.cancel()});
+    }).catch(()=>fn());
   }
 
-  /* garis indikator tab yang meluncur dari tab lama ke tab baru */
-  function nav(){return;
-    const nv=document.getElementById('nav');if(!nv)return;
-    const a=nv.querySelector('a.active');let i=nv.querySelector('.ind');
-    if(!i){i=document.createElement('i');i.className='ind';nv.appendChild(i)}
-    if(!a){i.style.opacity=0;return}
-    const x=a.offsetLeft+12,w=Math.max(8,a.offsetWidth-24);
-    if(pi){i.style.transition='none';i.style.transform=`translateX(${pi.x}px)`;i.style.width=pi.w+'px';i.getBoundingClientRect()}
-    i.style.opacity=1;i.style.transition='';i.style.transform=`translateX(${x}px)`;i.style.width=w+'px';pi={x,w};
+  /* ganti tema tanpa lonjakan */
+  function theme(fn){
+    if(!canVT()){fn();return}
+    root.dataset.vt='theme';
+    const t=document.startViewTransition(fn);
+    t.finished.catch(()=>{}).finally(()=>{delete root.dataset.vt});
   }
-  let rz;addEventListener('resize',()=>{clearTimeout(rz);rz=setTimeout(()=>{pi=null;nav()},150)});
-  return{go,nav};
+
+  /* filter grid dengan morf posisi: item yang hilang menyusut, sisanya meluncur ke tempat baru */
+  async function flipFilter(items,show){
+    const live=items.filter(e=>!e.classList.contains('hidden')),
+      out=live.filter(e=>!show(e)),
+      inc=items.filter(e=>e.classList.contains('hidden')&&show(e));
+    if(reduce()||!items[0].animate){items.forEach(e=>e.classList.toggle('hidden',!show(e)));return}
+    if(out.length)await Promise.all(out.map(e=>e.animate([{opacity:1,transform:'scale(1)'},{opacity:0,transform:'scale(.97)'}],{duration:180,easing:'ease-in',fill:'forwards'}).finished.catch(()=>{})));
+    const stay=items.filter(e=>!e.classList.contains('hidden')&&show(e)),first=new Map(stay.map(e=>[e,e.getBoundingClientRect()]));
+    items.forEach(e=>{e.getAnimations().forEach(x=>x.cancel());e.classList.toggle('hidden',!show(e))});
+    stay.forEach(e=>{const a=first.get(e),b=e.getBoundingClientRect(),dx=a.left-b.left,dy=a.top-b.top;
+      if(dx||dy)e.animate([{transform:`translate(${dx}px,${dy}px)`},{transform:'none'}],{duration:520,easing:EASE})});
+    inc.forEach((e,i)=>e.animate([{opacity:0,transform:'translateY(14px)'},{opacity:1,transform:'none'}],{duration:520,delay:80+i*40,easing:EASE,fill:'backwards'}));
+  }
+
+  /* parallax: --py pada elemen [data-par="faktor"] (maks. data-range px) */
+  let pl=[],pt=0;
+  const pOn=()=>!reduce()&&matchMedia('(min-width:900px)').matches;
+  const pStep=()=>{pt=0;if(!pOn())return;const h=innerHeight;
+    pl.forEach(el=>{const r=el.getBoundingClientRect();if(r.bottom<-200||r.top>h+200)return;
+      const f=parseFloat(el.dataset.par)||.1,m=parseFloat(el.dataset.range)||24,off=r.top+r.height/2-h/2;
+      el.style.setProperty('--py',Math.max(-m,Math.min(m,-off*f)).toFixed(1)+'px')})};
+  const pKick=()=>{if(!pt)pt=requestAnimationFrame(pStep)};
+  addEventListener('scroll',pKick,{passive:true});addEventListener('resize',pKick);
+  function parallax(){pl=[...document.querySelectorAll('[data-par]')];if(!pOn()){pl.forEach(e=>e.style.removeProperty('--py'));return}pStep()}
+
+  return{go,theme,flipFilter,parallax,inVt:()=>inVt,reduce,EASE};
 })();
