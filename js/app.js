@@ -196,7 +196,7 @@ function viewHome(){renderNav('beranda');const GURU=Sess.role()==='guru';
    <p class="kicker">E-modul suplemen Sejarah kelas XI (Fase F) · 6 unit inti + 1 unit lanjutan · prototipe</p>
    <h1>Jejak yang Tersembunyi</h1><p class="sub">Peran Etnis Tionghoa dalam Sejarah Indonesia</p>
    <div class="acts">${GURU?'<a class="btn" href="#dasbor">Buka dasbor</a><a class="btn ghost" href="#panduan-guru">Panduan guru</a><a class="btn ghost" href="#unit-1">Baca Unit 1</a>':`<a class="btn" href="#unit-${lanjut.id}">${lanjut.lbl}</a>`}</div>
-  </div><div class="hero-side"><span class="glyph" lang="zh" aria-hidden="true" data-par=".4" data-range="210" data-abs="1">史</span>
+  </div><div class="hero-side"><span class="glyph" lang="zh" aria-hidden="true" data-par=".21" data-range="50" data-abs="1">史</span>
    <div class="stats"><div><b>${UNITS.length}</b><span>unit</span></div><div><b>${nT}</b><span>kartu tokoh bernama</span></div><div><b>${nG}</b><span>sumber di galeri</span></div><div><b>${UNITS[0].periode.slice(0,4)}–${UNITS[UNITS.length-1].periode.slice(-4)}</b><span>rentang waktu</span></div></div>
   </div></section>
   <p class="lead rv">Buku teks Sejarah kelas XI menyebut etnis Tionghoa pada sembilan halaman dan hanya menamai satu orang. Rumah tempat Sumpah Pemuda diikrarkan disebut, pemiliknya tidak. Rumah tempat Sukarno dan Hatta diinapkan di Rengasdengklok disebut, pemiliknya tidak. Modul ini menceritakan sisanya: dari pasar dan kampung tempat mereka hidup, lewat tokoh-tokoh bernama, sampai peristiwa besar yang sudah kalian kenal.</p>
