@@ -176,9 +176,21 @@ body.is-auth footer,body.is-auth header.top{display:none}
  html[data-vt=page][data-dir=fwd]::view-transition-new(root){animation:vt-in-f .6s var(--ease) both}
  html[data-vt=page][data-dir=back]::view-transition-old(root){animation:vt-out-b .3s cubic-bezier(.4,0,1,1) both}
  html[data-vt=page][data-dir=back]::view-transition-new(root){animation:vt-in-b .6s var(--ease) both}
+ html[data-vt=page][data-to=home]::view-transition-old(root){animation:vt-home-out .34s cubic-bezier(.4,0,1,1) both}
+ html[data-vt=page][data-to=home]::view-transition-new(root){animation:vt-home-in .85s var(--ease) both}
+ html[data-to=home]::view-transition-new(hk){animation:vt-rise 1s var(--ease) .10s both}
+ html[data-to=home]::view-transition-new(hh){animation:vt-rise 1s var(--ease) .17s both}
+ html[data-to=home]::view-transition-new(hu){animation:vt-rise 1s var(--ease) .24s both}
+ html[data-to=home]::view-transition-new(ha){animation:vt-rise 1s var(--ease) .32s both}
+ html[data-to=home]::view-transition-new(hs){animation:vt-rise 1s var(--ease) .40s both}
+ html[data-to=home]::view-transition-new(hg){animation:vt-glyph 1.4s var(--ease) .05s both}
  html[data-vt=theme]::view-transition-old(root),html[data-vt=theme]::view-transition-new(root){animation-duration:.45s;animation-timing-function:var(--ease)}
 }
 html[data-vt=theme] header.top,html[data-vt=theme] .mnav{view-transition-name:none}
+@keyframes vt-home-out{to{opacity:0;transform:translate3d(0,-10px,0) scale(.994)}}
+@keyframes vt-home-in{from{opacity:0;transform:translate3d(0,14px,0)}}
+@keyframes vt-rise{from{opacity:0;transform:translate3d(0,28px,0)}}
+@keyframes vt-glyph{from{opacity:0;transform:translate3d(64px,-28px,0) rotate(-6deg) scale(.94)}}
 @keyframes vt-out-f{to{opacity:0;transform:translate3d(-32px,0,0)}}
 @keyframes vt-in-f{from{opacity:0;transform:translate3d(48px,0,0)}}
 @keyframes vt-out-b{to{opacity:0;transform:translate3d(32px,0,0)}}
