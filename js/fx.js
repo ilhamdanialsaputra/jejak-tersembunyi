@@ -4,7 +4,7 @@
      judul unit (nama transisi "ut"); sisa halaman bergeser searah navigasi.
      Cadangan (peramban lama): Web Animations pada #app.
    - flipFilter: tata letak grid bermorf saat difilter.
-   - parallax: pergeseran untuk elemen [data-par]; huruf hero (data-abs) juga di seluler.
+   - parallax: pergeseran untuk elemen [data-par]; huruf hero (data-m) juga di seluler.
    Semua gerak mati bila perangkat meminta "kurangi gerakan".
    ============================================================ */
 /* lompat ke atas seketika (mengabaikan scroll-behavior:smooth di CSS) */
@@ -78,27 +78,19 @@ const Fx=(()=>{
     inc.forEach((e,i)=>e.animate([{opacity:0,transform:'translateY(14px)'},{opacity:1,transform:'none'}],{duration:520,delay:80+i*40,easing:EASE,fill:'backwards'}));
   }
 
-  /* parallax: --py (px) dan --pr (derajat) pada elemen [data-par="faktor"] (maks. data-range px).
-     data-abs: dihitung dari jarak gulir halaman (huruf besar di hero), jalan juga di seluler.
-     Nilai dihaluskan per frame agar gerak terasa melayang, bukan menempel pada jari. */
+  /* parallax: --py pada elemen [data-par="faktor"] (maks. data-range px), rumus asli.
+     Desktop untuk semua elemen; seluler hanya yang bertanda data-m (huruf hero). */
   let pl=[],pt=0;
   const isDt=()=>matchMedia('(min-width:900px)').matches;
-  const cl=(v,m)=>Math.max(-m,Math.min(m,v));
-  const pTarget=(el,h)=>{const f=parseFloat(el.dataset.par)||.1,m=parseFloat(el.dataset.range)||24;
-    if(el.dataset.abs!==undefined)return cl(-(window.pageYOffset||root.scrollTop||0)*f,m);
-    const r=el.getBoundingClientRect();if(r.bottom<-200||r.top>h+200)return null;
-    return cl(-(r.top+r.height/2-h/2-(el._v||0))*f,m)};
-  const pStep=()=>{pt=0;if(reduce())return;let busy=false;const h=innerHeight,dt=isDt();
-    pl.forEach(el=>{const abs=el.dataset.abs!==undefined;
-      if(!abs&&!dt){el._v=undefined;el.style.removeProperty('--py');return}
-      const t=pTarget(el,h);if(t===null)return;
-      let v=el._v;if(v===undefined)v=t;else{v+=(t-v)*.14;if(Math.abs(t-v)<.15)v=t;else busy=true}
-      el._v=v;el.style.setProperty('--py',v.toFixed(1)+'px')});
-    if(busy)pt=requestAnimationFrame(pStep)};
+  const pStep=()=>{pt=0;if(reduce())return;const h=innerHeight,dt=isDt();
+    pl.forEach(el=>{if(!dt&&el.dataset.m===undefined){el.style.removeProperty('--py');return}
+      const r=el.getBoundingClientRect();if(r.bottom<-200||r.top>h+200)return;
+      const f=parseFloat(el.dataset.par)||.1,m=parseFloat(el.dataset.range)||24,off=r.top+r.height/2-h/2;
+      el.style.setProperty('--py',Math.max(-m,Math.min(m,-off*f)).toFixed(1)+'px')})};
   const pKick=()=>{if(!pt)pt=requestAnimationFrame(pStep)};
   addEventListener('scroll',pKick,{passive:true});addEventListener('resize',pKick);
-  function parallax(){pl=[...document.querySelectorAll('[data-par]')];pl.forEach(e=>{e._v=undefined});
-    if(reduce()){pl.forEach(e=>{e.style.removeProperty('--py');e.style.removeProperty('--pr')});return}
+  function parallax(){pl=[...document.querySelectorAll('[data-par]')];
+    if(reduce()){pl.forEach(e=>e.style.removeProperty('--py'));return}
     pStep()}
 
   return{go,theme,flipFilter,parallax,inVt:()=>inVt,reduce,EASE};
