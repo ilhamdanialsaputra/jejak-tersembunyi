@@ -100,17 +100,18 @@ function lbKeys(T,F,r){const cw=Math.max(T.width,T.height*r),ch=cw/r,k=cw/F.widt
   const dx=T.left+T.width/2-(F.left+F.width/2),dy=T.top+T.height/2-(F.top+F.height/2);
   return[{transform:`translate(${dx}px,${dy}px) scale(${k})`,clipPath:`inset(${iy}px ${ix}px)`},{transform:'none',clipPath:'inset(0px 0px)'}]}
 function lightbox(im){const f=im.closest('figure'),cap=f?$('figcaption b',f).textContent:im.alt,host=im.parentElement;
-  openOv('ov lb',`<div class="box"><img src="${esc(im.currentSrc||im.src)}" alt="${esc(im.alt)}"><p>${esc(cap)}</p></div>`);
-  const li=$('img',ov),p=$('p',ov);lbSrc=im;ov.onclick=null;
+  openOv('ov lb',`<i class="lbd" aria-hidden="true"></i><div class="box"><img src="${esc(im.currentSrc||im.src)}" alt="${esc(im.alt)}"><p>${esc(cap)}</p></div>`);
+  const li=$('img',ov),p=$('p',ov),bd=$('.lbd',ov);lbSrc=im;ov.onclick=null;
   if(Fx.reduce()||!li.animate){im.style.visibility='hidden';return}
+  bd.animate([{opacity:0},{opacity:.93}],{duration:560,easing:'cubic-bezier(.4,0,.2,1)'});
   const go=()=>{if(ov.classList.contains('hidden')||!lbSrc)return;const T=host.getBoundingClientRect(),F=li.getBoundingClientRect();
     if(!F.width||!F.height||!li.naturalWidth)return;
     im.style.visibility='hidden';li.animate(lbKeys(T,F,F.width/F.height),{duration:600,easing:Fx.EASE});
     p.animate([{opacity:0,transform:'translateY(8px)'},{opacity:1,transform:'none'}],{duration:500,delay:200,easing:Fx.EASE,fill:'backwards'})};
   li.style.visibility='hidden';const rdy=li.decode?li.decode().catch(()=>{}):Promise.resolve();
   rdy.then(()=>{li.style.visibility='';go()})}
-function lbClose(){const li=$('img',ov),p=$('p',ov),im=lbSrc;ov.dataset.closing='1';
-  const A=[ov.animate([{backgroundColor:'rgba(8,10,12,.94)'},{backgroundColor:'rgba(8,10,12,0)'}],{duration:420,easing:'ease-out',fill:'forwards'})];
+function lbClose(){const li=$('img',ov),p=$('p',ov),bd=$('.lbd',ov),im=lbSrc;ov.dataset.closing='1';
+  const A=[(bd||ov).animate([{opacity:.93},{opacity:0}],{duration:480,easing:'cubic-bezier(.4,0,.2,1)',fill:'forwards'})];
   if(li&&im&&im.isConnected){const host=im.parentElement,T=host.getBoundingClientRect(),F=li.getBoundingClientRect(),ok=T.bottom>0&&T.top<innerHeight&&F.width&&li.naturalWidth;
     if(ok)A.push(li.animate(lbKeys(T,F,F.width/F.height).reverse(),{duration:520,easing:Fx.EASE,fill:'forwards'}));
     else A.push(li.animate([{opacity:1,transform:'none'},{opacity:0,transform:'scale(.96)'}],{duration:300,easing:Fx.EASE,fill:'forwards'}))}
@@ -191,11 +192,11 @@ function viewHome(){renderNav('beranda');const GURU=Sess.role()==='guru';
   const nx=UNITS.find(u=>!state.done[u.id]),mulai=Object.keys(state.seen).some(k=>Object.keys(state.seen[k]||{}).length),lanjut=mulai&&nx?{id:nx.id,lbl:'Lanjutkan Unit '+nx.id}:{id:1,lbl:'Mulai dari Unit 1'};
   const nT=UNITS.reduce((a,u)=>a+u.tokoh.filter(t=>!t.nama.startsWith('[')).length,0),nG=UNITS.reduce((a,u)=>a+u.galeri.length,0);
   app.innerHTML=`
-  <section class="hero"><div class="hero-copy">
+  <section class="hero${Fx.inVt()?'':' ent'}"><div class="hero-copy">
    <p class="kicker">E-modul suplemen Sejarah kelas XI (Fase F) · 6 unit inti + 1 unit lanjutan · prototipe</p>
    <h1>Jejak yang Tersembunyi</h1><p class="sub">Peran Etnis Tionghoa dalam Sejarah Indonesia</p>
    <div class="acts">${GURU?'<a class="btn" href="#dasbor">Buka dasbor</a><a class="btn ghost" href="#panduan-guru">Panduan guru</a><a class="btn ghost" href="#unit-1">Baca Unit 1</a>':`<a class="btn" href="#unit-${lanjut.id}">${lanjut.lbl}</a>`}</div>
-  </div><div class="hero-side"><span class="glyph" lang="zh" aria-hidden="true" data-par=".16" data-range="40">史</span>
+  </div><div class="hero-side"><span class="glyph" lang="zh" aria-hidden="true" data-par=".4" data-range="210" data-abs="1">史</span>
    <div class="stats"><div><b>${UNITS.length}</b><span>unit</span></div><div><b>${nT}</b><span>kartu tokoh bernama</span></div><div><b>${nG}</b><span>sumber di galeri</span></div><div><b>${UNITS[0].periode.slice(0,4)}–${UNITS[UNITS.length-1].periode.slice(-4)}</b><span>rentang waktu</span></div></div>
   </div></section>
   <p class="lead rv">Buku teks Sejarah kelas XI menyebut etnis Tionghoa pada sembilan halaman dan hanya menamai satu orang. Rumah tempat Sumpah Pemuda diikrarkan disebut, pemiliknya tidak. Rumah tempat Sukarno dan Hatta diinapkan di Rengasdengklok disebut, pemiliknya tidak. Modul ini menceritakan sisanya: dari pasar dan kampung tempat mereka hidup, lewat tokoh-tokoh bernama, sampai peristiwa besar yang sudah kalian kenal.</p>
