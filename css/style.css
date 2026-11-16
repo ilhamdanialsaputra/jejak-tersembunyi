@@ -167,7 +167,7 @@ body.is-auth footer,body.is-auth header.top{display:none}
 
 /* ===== lintasan view transition ===== */
 @media(prefers-reduced-motion:no-preference){
- ::view-transition-group(topbar),::view-transition-group(mnav){animation:none}
+ ::view-transition-group(topbar),::view-transition-group(mnav){animation:none;z-index:10}
  ::view-transition-old(topbar),::view-transition-old(mnav){display:none}
  ::view-transition-new(topbar),::view-transition-new(mnav){animation:none}
  ::view-transition-group(ut){animation-duration:.65s;animation-timing-function:var(--ease)}
@@ -189,8 +189,8 @@ body.is-auth footer,body.is-auth header.top{display:none}
 html[data-vt=theme] header.top,html[data-vt=theme] .mnav{view-transition-name:none}
 @keyframes vt-home-out{to{opacity:0;transform:translate3d(0,-10px,0) scale(.994)}}
 @keyframes vt-home-in{from{opacity:0;transform:translate3d(0,14px,0)}}
-@keyframes vt-rise{from{opacity:0;transform:translate3d(0,28px,0)}}
-@keyframes vt-glyph{from{opacity:0;transform:translate3d(64px,-28px,0) rotate(-6deg) scale(.94)}}
+@keyframes vt-rise{from{opacity:0;transform:translate3d(0,18px,0)}}
+@keyframes vt-glyph{from{opacity:0;transform:translate3d(40px,-18px,0) scale(.96)}}
 @keyframes vt-out-f{to{opacity:0;transform:translate3d(-32px,0,0)}}
 @keyframes vt-in-f{from{opacity:0;transform:translate3d(48px,0,0)}}
 @keyframes vt-out-b{to{opacity:0;transform:translate3d(32px,0,0)}}
